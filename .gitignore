@@ -1,0 +1,52 @@
+# electron-vite output
+out/
+
+# deps
+node_modules/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# os
+.DS_Store
+
+# project files (binary, generated)
+*.ctt
+
+# generated ketcher static assets (copied at build time)
+public/ketcher/
+
+# generated Pyodide distribution (copied from node_modules by scripts/copy-pyodide.mjs)
+pyodide-dist/
+
+# ===== Facade repo: keep source + binaries OUT of git =====
+# Source code must NOT be published (user opted to distribute binaries only)
+src/
+electron/
+mcp/
+scripts/
+
+# Built installers / unpacked output (distributed via GitHub Releases, not git)
+release/
+dist/
+build/
+
+# Project-local data (not source, not for publish)
+.workbuddy/
+
+# electron-vite temp config leftovers (real config is electron.vite.config.ts)
+electron.vite.config.*.mjs
+
+# Binary installer extensions (safety net; release/ already ignored)
+*.dmg
+*.exe
+*.AppImage
+*.deb
+*.zip
+*.blockmap

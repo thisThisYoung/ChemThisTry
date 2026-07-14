@@ -1,0 +1,61 @@
+{
+  "name": "chemthistry",
+  "version": "0.1.0",
+  "description": "ChemThisTry - All-in-One Scientific Visualization Workstation",
+  "main": "out/main/index.js",
+  "author": "ChemThisTry Team",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/chemthistry/ChemThisTry",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chemthistry/ChemThisTry.git"
+  },
+  "scripts": {
+    "fetch-pyodide": "node scripts/fetch-pyodide.mjs",
+    "predev": "node scripts/fetch-pyodide.mjs",
+    "dev": "electron-vite dev",
+    "prebuild": "node scripts/fetch-pyodide.mjs",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "mcp": "node mcp/chemthistry-mcp.mjs",
+    "mcp:test": "node mcp/smoke-test.mjs",
+    "dist": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js",
+    "dist:mac": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --mac",
+    "dist:win": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --win",
+    "dist:linux": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --linux",
+    "dist:dir": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --dir"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@rdkit/rdkit": "^2025.3.4-1.0.0",
+    "3dmol": "^2.5.5",
+    "ag-grid-community": "^32.3.3",
+    "ag-grid-react": "^32.3.3",
+    "better-sqlite3": "^11.8.1",
+    "echarts": "^5.5.1",
+    "echarts-gl": "^2.1.0",
+    "fabric": "^6.4.3",
+    "katex": "^0.17.0",
+    "ketcher-core": "^3.15.0",
+    "ketcher-react": "^3.15.0",
+    "ketcher-standalone": "^3.15.0",
+    "lucide-react": "^0.460.0",
+    "mitt": "^3.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.21"
+  }
+}
