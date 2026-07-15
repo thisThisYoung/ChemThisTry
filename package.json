@@ -5,10 +5,10 @@
   "main": "out/main/index.js",
   "author": "ChemThisTry Team",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/chemthistry/ChemThisTry",
+  "homepage": "https://github.com/thisThisYoung/ChemThisTry",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chemthistry/ChemThisTry.git"
+    "url": "https://github.com/thisThisYoung/ChemThisTry.git"
   },
   "scripts": {
     "fetch-pyodide": "node scripts/fetch-pyodide.mjs",
