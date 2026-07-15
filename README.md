@@ -51,6 +51,18 @@ Alternatively, right-click (or Control-click) the app and choose **Open**, then 
 - **AppImage**: `chmod +x ChemThisTry-*.AppImage` then run it.
 - **.deb**: install with `sudo dpkg -i ChemThisTry-*.deb` (resolve dependencies with `sudo apt-get install -f` if needed).
 
+## Python sidecar (3D optimization & advanced export)
+
+Some features — 3D conformer optimization (Sketcher → Moleculer), ASE-based structure export (PDB/CIF/XYZ/VASP), and EPS/vector-PDF export — use a Python sidecar with **RDKit** and **ASE**. The app status bar shows `Python: connected` when it is available.
+
+- **macOS / Linux**: the app auto-detects a Python 3.9+ on your `PATH` (macOS also uses the project's managed venv). On Linux the runtime is **not** bundled, so install it yourself if missing — `pip install rdkit-pypi ase scipy cairosvg`, or on Debian/Ubuntu more simply `sudo apt install python3-rdkit python3-scipy` (plus `pip install cairosvg`). If needed, point the app at a specific interpreter via the `CHEMTHIS_PYTHON` environment variable.
+- **Windows**: the installer does **not** bundle Python. Install Python 3.9+ from python.org (tick *Add Python to PATH*), then in a terminal run:
+  ```powershell
+  pip install rdkit-pypi ase scipy cairosvg
+  ```
+  > On Windows the RDKit package is **`rdkit-pypi`**, not `rdkit`. If the sidecar fails with exit code **9009** ("system cannot find the file"), set `CHEMTHIS_PYTHON` to the full path of your `python.exe` and relaunch.
+- **Builders**: to ship a Windows installer that needs no user Python, run `node scripts/bundle-python-win.mjs` on a Windows build host (populates `resources/python`) before `npm run dist:win`. electron-builder then bundles it automatically.
+
 ## Status
 
 - **Source code** is not yet publicly available. This repository currently hosts the built application and documentation. Source will be opened under the Apache-2.0 license when ready.

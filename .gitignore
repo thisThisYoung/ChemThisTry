@@ -50,3 +50,20 @@ electron.vite.config.*.mjs
 *.deb
 *.zip
 *.blockmap
+
+# ===== Private / sensitive — must NOT be published =====
+# 软著登记材料（含身份/申请材料）、合同模板、营销文案 —— 私密，不进公开仓库
+软著登记材料/
+软件开发合作协议书_模板.md
+小红书文案_ChemThisTry.md
+
+# Redundant pnpm files (project uses npm; package-lock.json is source of truth)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Security audit / hardening docs — keep internal, do not publish弱点细节
+SECURITY_AUDIT.md
+SECURITY_HARDENING_PLAN.md
+
+# Software design spec — software-copyright material, keep local
+ChemThisTry_软件设计说明书.txt
