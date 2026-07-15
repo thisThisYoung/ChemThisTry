@@ -67,3 +67,11 @@ SECURITY_HARDENING_PLAN.md
 
 # Software design spec — software-copyright material, keep local
 ChemThisTry_软件设计说明书.txt
+# ===== Internal design / proposal / planning docs — NOT for public facade repo =====
+ChemThisTry_*.md
+ChemThisTry_*.txt
+chemthistry-dataviewer-design.md
+chemthistry-sketcher-technical-proposal.md
+graphviewer-technical-design.md
+chemthistry-global-framework.md
+RELEASE_NOTES_DRAFT.md
