@@ -35,7 +35,15 @@ scripts/
 # Built installers / unpacked output (distributed via GitHub Releases, not git)
 release/
 dist/
+dist-web/
 build/
+
+# Python (backend venv + caches; server source lives in server/ and IS committed)
+.venv/
+venv/
+__pycache__/
+*.pyc
+server/__pycache__/
 
 # Project-local data (not source, not for publish)
 .workbuddy/

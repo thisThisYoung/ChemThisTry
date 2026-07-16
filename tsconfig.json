@@ -15,7 +15,8 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@renderer/*": ["src/*"]
+      "@renderer/*": ["src/*"],
+      "canvg": ["./node_modules/canvg/lib/index.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "electron.vite.config.ts"]

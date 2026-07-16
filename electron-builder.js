@@ -15,24 +15,40 @@
 
 const notarize = process.env.CTT_NOTARIZE === 'true'
 
-// Refuse to cross-build the Windows target from a non-Windows host. Native
-// modules (better-sqlite3) cannot be compiled for win32 here, so a cross-build
-// silently embeds the host's native binary, which then fails at runtime on
-// Windows with "is not a valid Win32 application". The Windows package MUST be
-// built on a Windows host (or the windows-latest CI runner).
-if (
-  process.argv.includes('--win') &&
-  process.platform !== 'win32' &&
-  !process.env.CTT_ALLOW_CROSSBUILD
-) {
+// Native modules (better-sqlite3) cannot be cross-compiled for a DIFFERENT OS
+// from this host. A cross-build would silently embed the host's native binary
+// and then fail at runtime on the target OS with "is not a valid <platform>
+// application". The Windows / Linux packages MUST be built on a matching host
+// (or their dedicated CI runner). macOS builds are fine here.
+//
+// Map CLI target flags to the OS node.js reports for them.
+const REQUESTED = []
+if (process.argv.includes('--win')) REQUESTED.push('win32')
+if (process.argv.includes('--mac') || process.argv.includes('--macos')) REQUESTED.push('darwin')
+if (process.argv.includes('--linux')) REQUESTED.push('linux')
+
+const crossBuild =
+  REQUESTED.length > 0 && !REQUESTED.includes(process.platform) && !process.env.CTT_ALLOW_CROSSBUILD
+if (crossBuild) {
   console.error(
-    '\n[electron-builder] Refusing to build the Windows target from a non-Windows host.\n' +
-      '  Native modules (e.g. better-sqlite3) cannot be cross-compiled for win32 here,\n' +
-      '  which would ship a macOS/Linux binary that fails on Windows with\n' +
-      '  "is not a valid Win32 application".\n' +
-      '  -> Build the Windows installer on a Windows machine, or let the CI\n' +
-      '     windows-latest job produce it (push a "v*" tag or run the workflow\n' +
-      '     manually). Set CTT_ALLOW_CROSSBUILD=1 only if you know what you are doing.\n'
+    '\n[electron-builder] Refusing to cross-build native modules for a non-host OS.\n' +
+      '  Requested target(s): ' +
+      REQUESTED.join(', ') +
+      '   |   host: ' +
+      process.platform +
+      '\n' +
+      '  better-sqlite3 (and any other native module) can only be compiled for the\n' +
+      '  host OS; node-gyp has no cross-compile support, so the package would ship a\n' +
+      '  ' +
+      process.platform +
+      ' binary that fails on the target with "is not a valid <platform> application".\n' +
+      '  -> Build on a matching host:\n' +
+      '       Windows installer  -> run `npm run dist:win` on a Windows machine\n' +
+      '       Linux  package     -> run `npm run dist:linux` on a Linux machine\n' +
+      '       macOS package      -> run `npm run dist:mac` here (this host)\n' +
+      '     You may also use a dedicated CI job for the target OS.\n' +
+      '     Set CTT_ALLOW_CROSSBUILD=1 only if you have pre-supplied prebuilt native\n' +
+      '     binaries for the target OS (otherwise the build will still fail later).\n'
   )
   process.exit(1)
 }
@@ -123,8 +139,12 @@ module.exports = {
   },
 
   // ---- Windows -------------------------------------------------------------
+  // x64 only: the bundled Python runtime (scripts/bundle-python-win.mjs) and
+  // rdkit-pypi / MSYS2 cairo DLLs are amd64-only, so arm64 Windows builds
+  // cannot ship a self-contained Python. Drop "arm64" if a future portable
+  // Python becomes available.
   win: {
-    target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
+    target: [{ target: 'nsis', arch: ['x64'] }],
     // Code signing (optional): provide WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD.
   },
 

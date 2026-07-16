@@ -18,14 +18,16 @@
     "prebuild": "node scripts/fetch-pyodide.mjs",
     "build": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build",
     "preview": "electron-vite preview",
+    "dev:web": "vite --config vite.web.config.ts",
+    "build:web": "vite build --config vite.web.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "mcp": "node mcp/chemthistry-mcp.mjs",
     "mcp:test": "node mcp/smoke-test.mjs",
-    "dist": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js",
-    "dist:mac": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --mac",
-    "dist:win": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --win",
-    "dist:linux": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --linux",
-    "dist:dir": "npm run build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --dir"
+    "dist": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js",
+    "dist:mac": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --mac",
+    "dist:win": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --win",
+    "dist:linux": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --linux",
+    "dist:dir": "NODE_OPTIONS=\"--max-old-space-size=8192\" electron-vite build && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --config electron-builder.js --dir"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

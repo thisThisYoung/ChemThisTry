@@ -1,0 +1,11 @@
+# ChemThisTry web backend dependencies.
+# rdkit-pypi provides the full native RDKit (3D embedding + 2D depiction).
+# cairosvg needs the system libcairo (installed via the Dockerfile / OS pkg mgr).
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27
+rdkit-pypi>=2024.3
+cairosvg>=2.7
+scipy>=1.11
+ase>=3.22
+pillow>=10.0
+pydantic>=2.0
