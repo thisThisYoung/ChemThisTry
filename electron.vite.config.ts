@@ -49,6 +49,12 @@ export default defineConfig({
     define: {
       global: 'globalThis',
     },
+    optimizeDeps: {
+      // Pre-bundle ketcher (lazy-loaded heavy dep) at dev-server startup so its
+      // dynamic-import chunk hash stays stable and doesn't break mid-session
+      // after a config/package change forces a re-optimize (same fix as web).
+      include: ['ketcher-react', 'ketcher-core', 'ketcher-standalone'],
+    },
     build: {
       commonjsOptions: {
         transformMixedEsModules: true,

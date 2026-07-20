@@ -89,6 +89,24 @@ module.exports = {
   // .ico on Windows, .png on Linux from the buildResources directory).
   icon: 'build/icon',
 
+  // File association: double-clicking a `.ctt` opens it in the app instead of
+  // the OS trying to open it itself. electron-builder turns this single block
+  // into the right platform primitive:
+  //   - macOS  → CFBundleDocumentTypes in Info.plist (dock drop + double-click)
+  //   - Windows → registry ProgID / OpenWith registration (NSIS)
+  //   - Linux  → a MIME-type association in the .desktop entry
+  // The matching runtime wiring lives in electron/main.ts (open-file /
+  // second-instance / startup argv) and src/lib/projectIO.ts (the renderer
+  // listener that calls project:load-path).
+  fileAssociations: [
+    {
+      ext: 'ctt',
+      name: 'ChemThisTry Project',
+      role: 'Editor',
+      icon: 'build/icon',
+    },
+  ],
+
   // What goes INSIDE the app bundle (packed into app.asar). The renderer, main
   // and preload all live under out/ after `npm run build`.
   files: ['out/**/*', 'package.json'],
@@ -163,6 +181,17 @@ module.exports = {
     maintainer: 'ChemThisTry Team',
   },
 
-  // Do NOT auto-publish; releases are attached explicitly by the CI workflow.
-  publish: null,
+  // Auto-update feed for electron-updater (bundled in the app). It reads this
+  // to find new GitHub Releases and compare against the running version.
+  // NOTE: macOS builds are currently UNSIGNED + un-notarized, so the app opens
+  // the release page for a manual download rather than auto-installing (a
+  // self-installed replacement would be quarantined by Gatekeeper). Windows
+  // (NSIS) and Linux AppImage auto-install in place.
+  publish: [
+    {
+      provider: 'github',
+      owner: 'thisThisYoung',
+      repo: 'ChemThisTry',
+    },
+  ],
 }

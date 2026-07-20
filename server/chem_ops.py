@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import os
 import tempfile
 
@@ -175,11 +176,36 @@ def fit(req: dict) -> dict:
     ys_raw = req.get("y", [])
     if len(xs_raw) < 2 or len(ys_raw) < 2:
         raise ValueError("Fitting needs at least 2 data points")
-
-    x = np.array([float(v) for v in xs_raw], dtype=float)
-    y = np.array([float(v) for v in ys_raw], dtype=float)
-    if x.shape != y.shape:
+    if len(xs_raw) != len(ys_raw):
         raise ValueError("X and Y data have mismatched lengths")
+
+    # Coerce each value to a float, treating missing / empty / non-numeric cells
+    # as NaN (so they can be dropped rather than crashing float() or sneaking a
+    # NaN into the optimizer). Accepts "nan"/"inf"/"-inf" case-insensitively.
+    def _to_float(v):
+        if v is None:
+            return math.nan
+        if isinstance(v, str) and v.strip() == "":
+            return math.nan
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return math.nan
+
+    x = np.array([_to_float(v) for v in xs_raw], dtype=float)
+    y = np.array([_to_float(v) for v in ys_raw], dtype=float)
+
+    # Drop any row that is empty / non-finite in either coordinate. Without this
+    # guard a single bad row poisons curve_fit and the whole result collapses to
+    # NaN.
+    keep = np.isfinite(x) & np.isfinite(y)
+    x = x[keep]
+    y = y[keep]
+    if x.shape[0] < 2:
+        raise ValueError(
+            "Fitting needs at least 2 valid (finite, non-empty) data points; "
+            "the rest were empty cells or non-numeric values"
+        )
 
     model_name = (req.get("model") or "linear").lower()
     custom = req.get("custom")

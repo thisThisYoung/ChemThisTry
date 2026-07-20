@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 
 import chem_ops
 
-app = FastAPI(title="ChemThisTry Web Backend", version="0.1.0")
+app = FastAPI(title="ChemThisTry Web Backend", version="0.1.1")
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 _cors_raw = os.environ.get("CORS_ORIGINS", "*")

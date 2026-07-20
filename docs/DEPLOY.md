@@ -7,6 +7,14 @@ the Electron main process, the renderer talks to a small **FastAPI backend**
 that runs the same RDKit / cairosvg / scipy / ASE code paths as the desktop
 sidecar.
 
+> **Feature parity.** Because the web build compiles the *same* `src/` renderer
+> as the desktop app, it automatically includes every renderer-side feature —
+> including the recent **Preferences** expansion (graph / export defaults,
+> keyboard-shortcut reference, About tab, grouped searchable navigation) and the
+> **Help → About** page. The only differences between the two builds are the
+> native bridge (Electron main process vs. the FastAPI backend) and project
+> storage (`.ctt` SQLite file vs. browser `localStorage`).
+
 ```
 ┌────────────────────┐         HTTP/JSON          ┌──────────────────────────┐
 │  Browser (static)  │  chem:* / molecule:*  ───▶  │  FastAPI backend         │
@@ -218,3 +226,58 @@ npx serve dist-web       # then point nginx/caddy at it
 ```
 
 Open `/api/health` in a browser to confirm the backend capabilities are live.
+
+---
+
+## 9. Mobile & responsive
+
+ChemThisTry's web build is **responsive** and installable as a PWA. The desktop
+Electron app stays desktop-optimized (it ignores all of the below), but the same
+`src/` renderer automatically switches to a phone layout in the browser.
+
+### How it works
+Because most of the layout is set via React **inline styles** (which CSS media
+queries cannot override), the switch is driven in JS by a `useResponsiveStore`
+(`src/store/responsiveStore.ts`) that listens to `matchMedia('(max-width: 768px)')`
+and a touch-capability probe (`ontouchstart` / `navigator.maxTouchPoints` /
+`(pointer: coarse)`). When `isMobile` is true:
+
+- **Workspace** (`WorkspaceRoot.tsx`) stacks panes **vertically** and hides the
+  drag-to-resize splitter.
+- **MainLayout** swaps the desktop `MenuBar` for a `MobileTopBar` (menu /
+  console / commands / settings / help buttons, all ≥ 44 px). The
+  `ProjectExplorer` becomes a **left drawer** and the `ConsolePanel` a
+  **bottom drawer**, opened from the top bar over a dimmed overlay.
+- **ViewerFrame** turns its left toolbox and right panel into **drawers** (CSS
+  `.viewer-frame.is-mobile` rules in `src/index.css`); the inline width is left
+  `undefined` so CSS can size them.
+- **Dialogs / modals** (Preferences, Help/About, and the `.pref-*` / `.help-*`
+  shells) render **full-screen** under `@media (max-width: 768px)`.
+- **Tap targets** (tool buttons, icon buttons, explorer actions, inputs) are
+  bumped to ≥ 40–44 px and inputs use `font-size: 16px` to stop iOS zoom;
+  toolbars scroll horizontally instead of wrapping.
+- **Touch gestures**: `Canvas.tsx` (Fabric 6) intercepts one-finger pan only
+  when the touch misses objects (otherwise Fabric handles select/move) and
+  two-finger pinch-zoom / pan; `Moleculer.tsx` (3Dmol) gets one-finger rotate
+  and two-finger pinch-zoom / pan. Both are gated on `isTouch`.
+
+Heavy authoring (Ketcher structure drawing, Canvas vertex editing, large
+spreadsheet edits) stays desktop-oriented; the phone target is *view + light
+editing*, not full parity.
+
+### PWA / installable
+The web build ships a manifest, service worker, and icon in `src/public/`:
+
+- `src/public/manifest.webmanifest` — name, `display: standalone`, theme
+  `#0f172a`, icon `./icon.svg`.
+- `src/public/sw.js` — cache `ctt-v1`; navigations are network-first falling
+  back to `./index.html`, same-origin static GETs are cache-first, API /
+  cross-origin requests pass through uncached.
+- `src/public/icon.svg` — 512×512 atom/molecule mark.
+
+Vite copies `src/public/` verbatim to `dist-web/` (root is `src`, so the default
+`publicDir` resolves there). `src/pwa.ts` injects `<link rel="manifest">` plus a
+theme-color meta and registers the SW **only when `window.__CTT_IS_WEB__` is
+true** — i.e. it is a complete no-op inside the Electron app, so the desktop
+build never registers a service worker. Serve `dist-web/` over HTTPS and the app
+is installable to a phone home screen.

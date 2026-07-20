@@ -33,6 +33,15 @@ export default defineConfig({
     // Some third-party libs (ketcher-react) reference `global` at eval time.
     global: 'globalThis',
   },
+  optimizeDeps: {
+    // Pre-bundle the heavy Ketcher packages at dev-server startup. They are
+    // only reached via a lazy import (the Sketcher viewer), so without this
+    // Vite discovers them mid-session, re-runs the dependency optimizer, and
+    // rewrites the chunk hash — the already-loaded page then tries to fetch the
+    // stale hash and dev fails with "Failed to fetch dynamically imported
+    // module". Forcing them into the initial optimize pass avoids that race.
+    include: ['ketcher-react', 'ketcher-core', 'ketcher-standalone'],
+  },
   build: {
     // Output to <project>/dist-web so it never collides with the Electron
     // build output (out/) or electron-vite's dist/.
