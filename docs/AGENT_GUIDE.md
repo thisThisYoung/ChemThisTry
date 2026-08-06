@@ -22,6 +22,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 |------|-----------------|-------------|----------|
 | 列出文档 | `list_documents` | `read_project` | `useProjectStore.docs` / `.ctt` |
 | 读取数据表 | `get_sheet_data` | `read_sheet` | `useDatasetStore.getDataset` |
+| 读取结构 / 流程图 / 画布 | `read_canvas`（仅画布） | `read_sketch` / `read_molecule` / `read_flow` / `read_canvas` | 见 §3.5 |
 | 新建数据表 | `create_sheet` | `add_sheet` / `create_project` | `addDoc('sheet')` + `importText` |
 | 追加列 | `add_column` | （随 `add_sheet` 一次写入） | `addColumn`/`setCell` |
 | 公式列 | `add_formula_column` | — | `addFormulaColumn` |
@@ -29,6 +30,10 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 | 绘图 | `create_graph` | `add_graph` | `addGraphFromSheet` |
 | 曲线拟合 | `fit_curve` | — | Python 侧车 `chem:fit` |
 | 打开文档 | `open_document` | — | `useWorkspaceStore.openDoc` |
+| 新建 2D 结构 (Sketch) | — | `add_sketch` | `setStructure`（molfile V2000） |
+| 新建 3D 结构 (Molecule) | — | `add_molecule` | `setMolecule`（3Dmol；cif/xyz/mol/pdb/sdf/mlcl） |
+| 新建流程图 (FlowViewer) | — | `add_flow` | React Flow 模型（`doc.flow` JSON） |
+| 新建画布 (Canvas) | `add_canvas` | `add_canvas` | Fabric JSON（`doc.content` 字符串） |
 | 导出 CSV | （见 `run_command`） | `export_sheet_csv` | `useDatasetStore.exportCSV` |
 | 列出/执行命令 | `list_commands` / `run_command` | — | `commandRegistry` / `runCommand` |
 
@@ -59,13 +64,14 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
   4. 模型返回不含工具调用的普通文本即为最终答复。
 - 工具直接操作 zustand store / 命令注册表 / 侧车 IPC，**不新增任何主进程接口**——智能体走的正是用户点按钮时走的同一套状态通路。
 - 数据表、列均**按人类可读的名称寻址**（大小写不敏感），也可用内部 id。
+- 用户可在 AI Chat 中**附加图片**（截图、谱图、结构式等）；图片在浏览器端降采样（最长边 ≤1568px、JPEG 0.8）后以 `image_url` 多模态片段随消息发出，**流式**与 **Agent** 两条路径都支持。用户附带图片的 `user` 消息在 `ChatMessage.images` 上携带 data URL，构造请求时由 `toApiContent()` 转成 OpenAI 多模态 `content` 数组。
 
-### 2.3 工具清单（11 个）
+### 2.3 工具清单（13 个）
 
 以下为暴露给模型的 `TOOL_SCHEMAS`。参数中标注 `*` 为必填。
 
 #### `list_documents`
-列出当前工程内所有文档（sheet/graph/sketch/molecule/canvas），返回每项的 `id / type / name`。**引用文档前先调它探明现状。**
+列出当前工程内所有文档（sheet/graph/sketch/molecule/canvas/flowviewer），返回每项的 `id / type / name`。**引用文档前先调它探明现状。** 其中 `flowviewer` 为流程图（FlowViewer）文档类型；旧版 `.ctt` 中以 `flow` 存储，载入时自动迁移为 `flowviewer`（见 §5.4）。
 
 #### `get_sheet_data`
 读取数据表的列与单元格。
@@ -118,6 +124,17 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 按 id 执行已注册命令，可传参数。用于专用工具未覆盖的动作。
 - `commandId*` / `args?`
 
+#### `add_canvas`
+新建一张画布（Canvas，Fabric.js 自由绘图 / 标注板）并打开为活动标签页。
+- `name`：画布名（省略则自动编号）
+- `content`：可选 Fabric JSON 内容（对象或 JSON 字符串，即 `fabric.Canvas#toJSON()` 的输出）；省略则建空画布
+返回：`canvasId / canvasName`。
+
+#### `read_canvas`
+按 id 或名称读取某画布，返回其 Fabric JSON `content` 原串及解析出的对象数 `objectCount`。
+- `canvas*`
+返回：`canvasId / canvasName / content / objectCount`。
+
 ### 2.4 对话示例
 
 > 用户：「帮我建一张一级反应动力学表，时间 0–50 s，画浓度对时间的散点图，再用指数模型拟合。」
@@ -143,7 +160,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 
 ```bash
 npm run mcp        # 启动 MCP 服务器（stdio）
-npm run mcp:test   # 端到端冒烟测试（17 断言，含 .ctt 往返）
+npm run mcp:test   # 端到端冒烟测试（32 断言，含 .ctt 往返、Canvas 往返）
 ```
 
 ### 3.4 客户端配置
@@ -161,7 +178,7 @@ npm run mcp:test   # 端到端冒烟测试（17 断言，含 .ctt 往返）
 }
 ```
 
-### 3.5 工具清单（7 个）
+### 3.5 工具清单（15 个）
 
 所有工具的路径参数均需**绝对路径**。参数 `*` 为必填。
 
@@ -174,8 +191,22 @@ npm run mcp:test   # 端到端冒烟测试（17 断言，含 .ctt 往返）
 | `add_sheet` | 向 `.ctt` 加一张数据表（含列数据） | `file*` / `columns*` / `name?` |
 | `add_graph` | 向 `.ctt` 加一张绑定到表的图 | `file*` / `sheet*` / `xColumn*` / `yColumns*` / `chartType?` |
 | `export_sheet_csv` | 返回某表的 CSV 文本（表头 + 数据行） | `file*` / `sheet*` |
+| `add_sketch` | 向 `.ctt` 加一张 2D 结构（Sketch）文档，写入 MOLfile V2000 字符串 | `file*` / `structure*` / `name?` / `view?` |
+| `read_sketch` | 读取某 Sketch 文档的 MOLfile 结构 + 可选视口 | `file*` / `sketch*` |
+| `add_molecule` | 向 `.ctt` 加一张 3D 结构（Molecule）文档，写入结构文本 + 格式 | `file*` / `text*` / `format?`(默认 mol) / `name?` / `view?` / `bonds?` |
+| `read_molecule` | 读取某 Molecule 文档的结构文本/格式/视图/键 | `file*` / `molecule*` |
+| `add_flow` | 向 `.ctt` 加一张流程图（FlowViewer）文档，写入 React Flow 模型 | `file*` / `flow*` / `name?` |
+| `read_flow` | 读取某 Flow 文档的 React Flow 模型（nodes/edges/layers） | `file*` / `flow*` |
+| `add_canvas` | 向 `.ctt` 加一张画布（Canvas，Fabric.js）文档；`content` 为可选 Fabric JSON 对象或字符串，省略则建空画布 | `file*` / `name?` / `content?` |
+| `read_canvas` | 读取某 Canvas 文档的 Fabric JSON `content` 字符串与解析出的对象数 `objectCount` | `file*` / `canvas*` |
 
 `columns` 结构与通道 A 一致：`[{ name*, unit?, values*: (number|string)[] }]`。
+
+结构类工具说明：
+- `add_sketch` 的 `structure` 是 MOLfile V2000（Ketcher 可解析）字符串，写入 `doc.structure`；`view` 为 Ketcher 视口状态 JSON（可选）。
+- `add_molecule` 的 `text` 是原始结构文本，`format` 取值 `cif / xyz / mol / pdb / sdf / mlcl`（3Dmol 可解析）；写入 `doc.molecule = { text, format, view?, bonds? }`。
+- `add_flow` 的 `flow` 是 React Flow 模型（对象或 JSON 串），节点形如 `{ id, position:{x,y}, data:{ shape, label }, type:'shape' }`、边形如 `{ id, source, target, data? }`，写入 `doc.flow`（JSON 串）。`read_flow` 返回解析后的模型。
+- `add_canvas` 的 `content` 是 `fabric.Canvas#toJSON()` 的输出（Fabric JSON 对象，或其 JSON 字符串），写入 `doc.content`；省略则 `content` 为空、App 打开时初始化空画布。`read_canvas` 返回 `content` 原串与 `objectCount`（解析 `objects.length`）。
 
 ### 3.6 JSON-RPC 会话示例
 
@@ -256,6 +287,7 @@ bubble, bar-cat
 ### 5.3 zustand Store 原语
 
 - `useProjectStore`：`addDoc(type, name?)`、`addGraphFromSheet(datasetId, xCol, yCols[], chartType, yAxisSide?, errorCols?, dimension?, zCol?, seriesDatasets?)`、`docsByType`、`removeDoc`、`renameDoc`、`setGraphPlot`、`setMolecule`、`setCanvasContent`、`setStructure`。
+  - ⚠️ **`addGraphFromSheet` 的 `xCol` / `yCols` / `errorCols` 的值必须是列 `id`，不是列 `name`**：GraphViewer 渲染时按 `dataset.columns.find(c => c.id === yId)` 解析数据，传名称会因 id 不匹配而得到空白图。若只有列名，先用 `dataset.columns.find(c => c.name === name)?.id` 解析出 id 再传入（`src/lib/startProjects.ts` 的动力学示例即踩过此坑并已修复）。`yAxisSide` / `errorCols` 的键也要用列 id（如 `{ [signalId]: 'left' }`、`{ [signalId]: errorId }`）。
 - `useDatasetStore`：`createDataset`、`getDataset`、`addColumn`、`addRows`、`setCell`、`addFormulaColumn`、`setColumnMeta`、`importText`、`exportCSV`、`rowCount`、`seedKinetics`。
 - `useWorkspaceStore`：`openDoc`、`closeDoc`、`splitPane`、`closePane`、`moveTab`。
 
@@ -263,7 +295,7 @@ bubble, bar-cat
 
 SQLite（better-sqlite3 / node:sqlite），表：
 - `meta(key, value)` —— 工程名、主题、版本等；
-- `docs(id, ord, json)` —— 每个文档一行；
+- `docs(id, ord, json)` —— 每个文档一行；其中 `type` 字段取值为 5 个内置类型 `sheet`/`graph`/`sketch`/`molecule`/`canvas`，外加插件注册的 `flowviewer`（流程图 FlowViewer）。载入时对历史值 `diagram`/`drawer`/`flow` 自动迁移为 `flowviewer`（`src/store/persistence.ts`）。各类型的核心字段：`sketch.structure`（MOLfile 串）、`molecule={text,format,view?,bonds?}`、`flow`（React Flow 模型 JSON 串）、`canvas.content`（Fabric JSON 串，空画布可省略）。
 - `datasets(id, ord, json)` —— 每个数据集一行（`sheet` 的 `doc.id === dataset.id`，1:1）；
 - `panes(ord, json)` —— 工作区分屏；载入时至少需要 1 个 pane。
 
@@ -290,7 +322,7 @@ interface UserPrefs {
 
 - 变更时派发 `PREFS_CHANGED_EVENT`，各面板监听后即时刷新（`saveUserPrefs({ ...getUserPrefs(), ...partial })` 做增量合并，避免覆盖其它分区）。
 - `resetUserPrefs(section?)`：不带参数恢复全部，`section` 取 `'general' | 'graph' | 'export'` 时仅恢复对应分区。
-- 首选项面板中的「图表默认 / 导出默认 / 快捷键 / 关于」分区即读写该结构；快捷键页为**只读一览**（全局快捷键的展示表，不改键位）。（手机 Web 端隐藏「快捷键」分区，见上文 §2.1 注释。）
+- 首选项面板中的「图表默认 / 导出默认 / 快捷键 / 关于」分区即读写该结构；快捷键页为**只读一览**（按「全局 / 画布 Canvas / 流程图 FlowViewer」分组展示各查看器的快捷键，不改键位）。（手机 Web 端隐藏「快捷键」分区，见上文 §2.1 注释。）
 
 ---
 
@@ -306,7 +338,7 @@ interface UserPrefs {
 
 | 主题 | 文件 |
 |------|------|
-| AI 工具层（11 工具 + 分发器） | `src/lib/ai/tools.ts` |
+| AI 工具层（13 工具 + 分发器） | `src/lib/ai/tools.ts` |
 | AI Chat 客户端 + Agent 循环 | `src/lib/aiChat.ts` |
 | Agent 模式开关 UI / 首选项面板（分组导航 + 搜索 + 分区恢复默认） | `src/components/settings/PreferencesModal.tsx` |
 | 首选项标签页枚举（`PrefTab`） | `src/store/preferencesStore.ts` |

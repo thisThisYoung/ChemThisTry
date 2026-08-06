@@ -32,6 +32,17 @@ export default defineConfig({
   define: {
     // Some third-party libs (ketcher-react) reference `global` at eval time.
     global: 'globalThis',
+    // Mark this as the standalone web build (browser + Capacitor/iOS app).
+    // JSON.stringify so Vite/esbuild inject a real boolean, not the string 'true'.
+    __CTT_WEB__: JSON.stringify(true),
+    // Ketcher's CJS bundle reads `process.env.NODE_DEBUG` at module-eval time and
+    // uses `process.nextTick` / `process.stderr`. Vite only defines
+    // `process.env.NODE_ENV`, so bare `process.env.NODE_DEBUG` throws
+    // "Cannot read properties of undefined (reading 'NODE_DEBUG')" in the browser.
+    // Statically replacing the whole `process.env` object removes every
+    // `process.env.*` reference from the bundle; `process.nextTick`/`stderr` are
+    // covered separately by the `window.process` shim in src/index.html.
+    'process.env': JSON.stringify({ NODE_ENV: 'development' }),
   },
   optimizeDeps: {
     // Pre-bundle the heavy Ketcher packages at dev-server startup. They are
@@ -47,10 +58,26 @@ export default defineConfig({
     // build output (out/) or electron-vite's dist/.
     outDir: resolve(__dirname, 'dist-web'),
     emptyOutDir: true,
+    // Classic (non-module) target so the single IIFE bundle runs under
+    // file:// / ArkWeb $rawfile, where `<script type="module">` is blocked by
+    // the opaque-origin CORS rule and would leave a blank WebView.
+    target: 'es2018',
+    // No modulepreload links (they are module-only and useless under file://).
+    modulePreload: false,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
     rollupOptions: {
+      // Emit a single self-contained IIFE so it executes as a classic script.
+      // inlineDynamicImports folds the lazy ketcher / 3dmol chunks into one
+      // file, removing the runtime `import()` that also fails under file://.
+      output: {
+        format: 'iife',
+        inlineDynamicImports: true,
+        entryFileNames: 'assets/index.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
       // 3dmol (3D molecular viewer) uses `eval` internally for dynamic
       // parsing. esbuild warns about it but does NOT rewrite it, so the
       // minified bundle still works at runtime. Silence only this expected,
@@ -70,5 +97,62 @@ export default defineConfig({
     // Avoid clashing with the Electron dev server if both are running.
     strictPort: false,
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    // ArkWeb (HarmonyOS Web component) loads this bundle from $rawfile via a
+    // file://-like context. `<script type="module">` is blocked there by the
+    // opaque-origin CORS rule, and `crossorigin` is also refused. Strip BOTH so
+    // the emitted script runs as a classic (non-module) script. Harmless for
+    // normal browsers.
+    {
+      name: 'strip-module-crossorigin-for-arkweb',
+      // Only strip in BUILD output. The dev server serves native ESM and must
+      // keep `type="module"` — ctx.server is defined there, so we skip.
+      transformIndexHtml(html, ctx) {
+        if (ctx && ctx.server) return html
+        return html
+          .replace(/\s+type="module"/g, '')
+          .replace(/\s+crossorigin(="")?/g, '')
+      },
+    },
+    // Inline the JS (and CSS) bundle directly into index.html for the BUILD
+    // output. Under ArkWeb $rawfile (file://, opaque origin) the Web component
+    // serves rawfile sub-resources with a MIME/permission quirk that silently
+    // blocks external <script src> (no error event, blank page). An INLINE
+    // <script> always executes — no fetch, no MIME, no CORS. This makes the
+    // HarmonyOS/rawfile build self-contained. (Dev server keeps normal ESM.)
+    {
+      name: 'inline-bundle-for-arkweb',
+      apply: 'build',
+      enforce: 'post',
+      generateBundle(_options, bundle) {
+        const htmlFile = bundle['index.html']
+        if (!htmlFile) return
+        let htmlSrc =
+          typeof htmlFile.source === 'string' ? htmlFile.source : String(htmlFile.source)
+        const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        for (const [name, asset] of Object.entries(bundle)) {
+          if (asset.type === 'chunk') {
+            const re = new RegExp(
+              '<script[^>]*src="([^"]*' + esc(name) + ')"[^>]*></script>',
+            )
+            if (re.test(htmlSrc)) {
+              const code = (asset as { code: string }).code.replace(/<\/script>/gi, '<\\/script>')
+              htmlSrc = htmlSrc.replace(re, () => '<script>' + code + '</script>')
+              delete bundle[name]
+            }
+          } else if (asset.type === 'asset' && name.endsWith('.css')) {
+            const re = new RegExp('<link[^>]*href="([^"]*' + esc(name) + ')"[^>]*>')
+            if (re.test(htmlSrc)) {
+              const cssSrc = (asset as { source: string | Uint8Array }).source
+              const css = typeof cssSrc === 'string' ? cssSrc : Buffer.from(cssSrc).toString('utf8')
+              htmlSrc = htmlSrc.replace(re, () => '<style>' + css + '</style>')
+              delete bundle[name]
+            }
+          }
+        }
+        htmlFile.source = htmlSrc
+      },
+    },
+  ],
 })

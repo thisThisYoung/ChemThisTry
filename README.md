@@ -42,6 +42,7 @@ ChemThisTry 由五个相互联动的模块组成，共享一个无限画布工�
 ### 🌐 其他 More
 - 工程文件 Project file: `.ctt`（基于 SQLite 的工程包 / SQLite-based project bundle）
 - 多语言界面 Multilingual UI: 简体中文 · 繁體中文 · English · 日本語 · Français · Español · Dansk
+- 新建工程模板 Project templates: 空白 / 动力学示例 / 结构编辑器（Sketcher）/ 分子视图（Moleculer）/ 画布（Canvas）五种起始模板，一键以对应模块为首页新建工程。Five starter templates — Blank / Kinetics example / Sketcher / Moleculer / Canvas — spin up a project pre-opened to the matching module as its home page.
 - 首选项 Preferences: 左侧分组导航 + 内容区的主从式设置面板，涵盖外观 / 主题、图表默认、导出默认、快捷键一览、AI 助手、插件；支持顶部搜索定位与分区 / 全局「恢复默认」。A master-detail settings panel (grouped left-side navigation + content area) covering appearance / theme, graph defaults, export defaults, a keyboard-shortcut reference, the AI assistant, and plugins — with a search box and per-section / global "Reset to defaults". On mobile (phone web), the AI / Plugins / Shortcuts tabs are hidden to reduce clutter, leaving only General / Graph / Export / About.
 - 帮助中心 Help center: 内置的分节文档（快速上手、各模块指南、疑难排查）与「关于」页（版本号、官网 / 源码链接、许可证、技术栈）。Built-in sectioned documentation (getting started, per-module guides, troubleshooting) plus an About page (version, website / source links, license, tech stack).
 

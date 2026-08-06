@@ -20,16 +20,6 @@
   - 首选项「关于」页（AboutTab）新增「检查更新」按钮与状态行：有更新时显示「下载」或「打开下载页」（按平台而异），已下载时显示「重启并安装」或「打开下载页」。
   - 平台策略：Windows（NSIS）与 Linux（AppImage，读取 `APPIMAGE` 环境变量）可就地自动下载安装；**未签名 macOS 与 DEB/RPM 无法自替换**，UI 改为「打开下载页」并跳转对应 GitHub Release Tag（`app:open-release` 校验 `https://` 后 `shell.openExternal`）。首次检查的网络/离线错误被抑制，避免启动即报错。
   - i18n：en / zh-CN / zh-TW 新增 `update.*` 系列键（13 个）；`electron-builder.js` 由 `publish: null` 改为 GitHub 发布源。
-
-### 修复 (Fixed)
-- **移动端布局溢出**：系统地加固了从 `app-root` 到各 viewer 主体的整条 `overflow-x` 护栏（约 12 个容器 `max-width:100%; overflow-x:hidden; box-sizing:border-box`），修复 GraphViewer / Moleculer / Canvas 以及顶部主面板的内容溢出；底部面板列宽改为固定比例（42% / 58%）防止 Outliner 把 Properties 挤溢出。
-- **移动端欢迎页误显示**：Web 端原本因 `web-bridge` 注入伪 `window.electron` 而误走桌面启动逻辑弹出欢迎页；现改为以真正的 Web 标记 `window.__CTT_IS_WEB__` 判断，Web 端直接进入示例工程。
-
----
-
-## [未发布] - 2026-07-17
-
-### 新增 (Added)
 - **项目管理器支持文件夹树**：左侧 Project Explorer 现可新建文件夹与任意层级的子文件夹；文档按所在文件夹归类，以递归树展示（不再按文档类型分组成扁平列表）。
   - 顶部 `＋ 新建文档` 下拉（sheet / graph / sketch / molecule / canvas 五种类型），新建文档落入当前“活动文件夹”。
   - 顶部 `＋ 新建文件夹`；文件夹行内 `＋` 可建子文件夹；点击文件夹行切换展开/收起，并同时将其设为“活动文件夹”（后续新建项落入其中）。
@@ -73,26 +63,61 @@
 - **Help 帮助文档新增「关于（About）」页**：位于帮助侧边栏，含版本信息（`{{VERSION}}` 运行时由 `package.json` 注入）、官网与源码链接（[GitHub](https://github.com/thisThisYoung/ChemThisTry)）、Apache-2.0 许可证、技术栈、反馈与贡献；GitHub 链接可点击跳转。顺带让帮助文档支持可点击外链（`[文字](https://...)` → 新标签打开，仅限 http/https）。
 
 ### 修复 (Fixed)
+- **移动端布局溢出**：系统地加固了从 `app-root` 到各 viewer 主体的整条 `overflow-x` 护栏（约 12 个容器 `max-width:100%; overflow-x:hidden; box-sizing:border-box`），修复 GraphViewer / Moleculer / Canvas 以及顶部主面板的内容溢出；底部面板列宽改为固定比例（42% / 58%）防止 Outliner 把 Properties 挤溢出。
+- **移动端欢迎页误显示**：Web 端原本因 `web-bridge` 注入伪 `window.electron` 而误走桌面启动逻辑弹出欢迎页；现改为以真正的 Web 标记 `window.__CTT_IS_WEB__` 判断，Web 端直接进入示例工程。
 - **双 Y 轴切换（左→右）缺陷**：此前切换左轴为右轴时，仅 tick 标签随行移动、轴标题不跟随，且水平网格线消失（仅剩竖直网格）。现改为——竖直网格由底部 X 轴持有（不再依赖被置 `splitLine:false` 的右轴），保证双轴时水平线仍可见；右轴标题随系列一同落在右侧（`name` 与 tick 同步到位）。
 - **默认四边坐标轴**：上下左右四条坐标轴默认均绘制（边线默认显示）；仅在“承载轴标题”的一边显示 tick 与刻度标签（如底部 X 轴、左/右 Y 轴），无标题的边（默认顶部、无右系列时的右侧）仅显示轴线、隐藏刻度标签，满足“四轴均显示但仅标题所在处显示 ticks”的需求。行为可由 `PlotConfig.axes {top,bottom,left,right}` 微调。
 - **关系图谱 sheet 节点配色与图标不一致**：此前 `RelGraphPanel` 的 sheet 节点硬编码蓝色 `#2f6fed`，与项目其他位置（Project Explorer 树、顶栏 New 菜单、命令面板、欢迎页）sheet 图标所用的主题强调色 `var(--accent)` 不一致；其余四类（graph/sketch/molecule/canvas）两处配色恰好相同。现改为运行时解析 `--accent` 作为 sheet 节点色，与图标完全对应，且随主题切换同步。
-
-### 变更 (Changed)
-- **移除“新建文档”按钮**：Project Explorer 不再提供通用“新建文档”入口（文档仍可通过欢迎页 / 菜单 / 命令面板 / 各视图内部入口创建）。侧栏底部图标栏现为 6 个按钮：排序 / 显示当前文件 / 全部折叠展开 / 新建文件夹 / 文档 / 偏好设置（头部仅保留标题）。
-
-### 修复 (Fixed)
+- **GraphViewer 导出样式丢失（桌面端/Web 端）**：此前在 GraphViewer 中修改系列样式（颜色 / 线型 / 线宽 / 标记）后导出，导出文件仍使用默认样式。根因为导出用的 `currentPlotConfig()` 返回值缺失 `seriesStyles` 字段，导出路径重建 ECharts 实例时该字段为 `undefined` 从而回退到默认调色板与线型；而屏幕渲染走的是携带 `seriesStyles` 的内联 `plotConfig`，故屏幕显示正常。已将其补回 `currentPlotConfig()` 返回值，现 2D 的 SVG / EPS / PDF / PNG 导出与屏幕样式完全一致（画布导出与 3D 导出走屏幕实例 `getDataURL`，本就不受影响）。
 - **状态栏 Python 指示器**：此前硬编码为“未连接”，现改为挂载时通过 `chem:ping` IPC 探测 sidecar 真实能力（RDKit / SciPy / ASE / CairoSVG），每 20s 复探；连接时显示绿色“● Python: 已连接 <版本>”，未连接显示灰色“○ Python: 未连接”。
 - **状态栏“已保存”指示器**：此前硬编码为“已保存”，现改为依据 `useProjectStore` 中 `docs` 的 `modified` 标记真实派生——存在未保存修改时显示琥珀色“● 未保存”，否则绿色“○ 已保存”。
 - **文档右键菜单本地化**：原硬编码英文 Rename / Close Tab / Delete 改为 `explorer.renameDoc` / `explorer.closeTab` / `common.delete`，与文件夹菜单保持一致；7 个语言文件均补对应键。
 - **文件夹移动逻辑**：修复 `moveNode` 移动文件夹后未同步其 `parentId` 的隐患——该隐患会导致反向移动时被循环护栏沿陈旧 `parentId` 误判为非法（自我后代）而拦截。
 - **工程加载类型错误**：修复 `loadProject` 归一化旧工程文档时因 `(v as object)` 展开丢失 `ProjectDoc` 类型导致的 `TS2322` 编译错误。
 
+### 变更 (Changed)
+- **移除“新建文档”按钮**：Project Explorer 不再提供通用“新建文档”入口（文档仍可通过欢迎页 / 菜单 / 命令面板 / 各视图内部入口创建）。侧栏底部图标栏现为 6 个按钮：排序 / 显示当前文件 / 全部折叠展开 / 新建文件夹 / 文档 / 偏好设置（头部仅保留标题）。
+
+---
+
+## [0.1.2] - 2026-08-04
+
+### 新增 (Added)
+- **全新流程图插件（FlowViewer）〔重点新增〕**：独立的流程图模块，可作为插件在应用中打开，用于绘制出版级流程图 / 示意框图。基于 `@xyflow/react 12.11.2`，支持节点 / 边编辑、从连接点拉出快捷新建目标节点；排版工具含对齐（左 / 右 / 顶 / 底 / 水平居中 / 竖直居中）、按间距分布（水平 / 垂直）、水平 / 垂直翻转；工具栏按钮悬停显示已绑定快捷键、新增翻转按钮（⌘/Ctrl+Shift+H / V）；导出 Canvas 时箭头改真实 `<path>` 三角、文字补 `dominant-baseline="middle"`；文档配色集中 `src/lib/docColors.ts`（`DOC_TYPE_COLOR`）；非英文界面显示本地化译名。
+- **全局撤销 / 重做**：应用级历史栈（`historyStore` 结构化快照 + 250ms 合并窗），覆盖文档增删改、画布对象编辑、图表属性调整等；⌘/Ctrl+Z 撤销、⇧+⌘/Ctrl+Z 重做。
+- **DataViewer 数据整理增强**：排序 / 筛选 / 缺失值处理改走自定义对话框写回 `columns[].values`（可撤销）；排序时缺失值恒置末尾，筛选支持多规则 AND，缺失值支持删除行 / 固定值填充 / 均值 / 中位数 / 线性插值（`datasetStore.sortRows` / `filterRows` / `handleMissing`）。
+- **GraphViewer 模板系统 + LaTeX 渲染**：① 内置 4 个只读预设模板（`BUILTIN_TEMPLATES`，仅带主题），并支持 localStorage 保存自定义模板（紧凑子集：图表类型 / 维度、系列样式、标题 / 轴标签、图例 / 网格、对数轴、几何与 14 个轴字段），`applyTemplate(...,true)` 重风格化。② 标题与 X/Y 轴名支持 LaTeX（`$...$` → KaTeX → 栅格化注入，PDF/EPS/SVG/PNG 一致）；分类轴刻度标签支持 LaTeX（SVG 渲染器特殊处理、注入 `<image>`）；3D 网格不做轴名 LaTeX。
+- **Canvas 9 点参考点（RefPoint）**：模块级参考点系统（9 宫格 `REF_POINTS/REF_FRACTION/REF_POINT_LABEL` + `RefPointPicker`），固定参考点后缩放 / 尺寸编辑锚定该点（兼容 scale 与几何烘焙两条路径），状态存 `localStorage('ctt-canvas-refPoint'，默认 tl)`，7 语言 i18n。
+- **Sketcher ACS1996 风格 + CDX 导入**：绘图遵循 ACS 1996 配色与线宽规范；支持导入 `.cdx` / `.cdxml` 矢量结构文件。
+- **Moleculer 3D 增强**：① 电荷密度体绘制（volumetric，须 register-then-rebuild 避免被 `removeAllShapes` 清掉）；② 多帧轨迹播放（换结构先 `removeVolumeData`）；③ Cartoon / Ribbon 二级结构（须 `spec.cartoon={ribbon:true}`）；④ 分子表面 SAS / SES / VDW（可调不透明度，默认 0.6）；⑤ orthographic 投影 + 仅 CIF 扩胞 + 透明背景，导出 PNG ≤4096²。
+- **新建工程向导模板扩充**：`StartWizard` 新增 结构编辑器(Sketcher) / 分子视图(Moleculer) / 画布(Canvas) 三个首页模板，与「空白」「动力学示例」并列共 5 个起始模板（`src/lib/startProjects.ts`）。
+- **工具栏 / 工具箱快捷键提示**：Canvas 与 Flow 工具栏按钮 tooltip 显示已绑定快捷键，格式 `名称（键）`（半角括号）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V），复用 `canvas.flipHorizontal/Vertical` i18n；新增 `canvas.curvature` 等键（7 语言）。
+- **应用内 AI Chat 多模态图片上传**：控制台 AI 标签页 ImagePlus 按钮、一次多选；待发缩略图可逐个移除；发送时浏览器端降采样（最长边 ≤1568px、转 JPEG 0.8）后以多模态片段随消息发出，普通流式与 Agent 工具循环两路径均支持；用户气泡回显图片、支持「仅发图」。需视觉模型（如 `gpt-4o`）。`ChatMessage.images` / `send(text, images?, onStream?)` / `toApiContent` / `readImageFile`。
+- **通道 A（应用内 AI Chat）Canvas 工具**：`src/lib/ai/tools.ts` 工具 11 → 13，新增 `add_canvas`（建画布并可选写入 Fabric JSON、自动打开）与 `read_canvas`（按 id/name 读内容与对象数），走运行中 store（`addDoc` / `setCanvasContent` / `openDoc`）。
+- **MCP 暴露 Canvas**：`mcp/chemthistry-mcp.mjs` 工具 13 → 15，新增 `add_canvas` / `read_canvas`（读写 `.ctt`，与通道 A 同名语义一致但后端不同）；冒烟测试 32 断言通过。
+- **应用内 Help「Image Upload」小节**：英文源 + 6 语言译文（zh-CN / zh-TW / fr / es / ja / da）的 AI Chat 章节补图片上传说明。
+
+### 修复 (Fixed)
+- **Shift+A 按光标区域分流**：改用 `getRegionAtPoint` / `getRegionUnderPointer` 在按键瞬间实时命中测试光标位置（不再用 `getActiveRegion()`，hover 不刷新），修复悬停误判弹错菜单。
+- **流程图图标颜色一致化**：抽出 `DOC_TYPE_COLOR`（`docColors.ts`），项目管理器树与关系图谱共用，Flow 两边均为 `#5b6bd6`。
+- **动力学示例 GraphViewer 空白**：按列 **id** 绑定（原误用列名导致曲线 / 误差棒解析失败）。
+- **分布算法改为按间距(gap)均分**：首尾物体边缘锚定、中间等间隙铺开，修复大小不一时「中点均分」间隙不均；Canvas `distribute` 与 Flow `distributeNodes` 两处统一（修正 Flow 的 off-by-one）。
+- **工具栏补齐快捷键 + Flow 翻转按钮**：Canvas / Flow 工具栏按钮 title 显示已绑定快捷键（单一来源拼接，避免不一致）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V）。
+
+### 变更 (Changed)
+- **Canvas 文本格式栏移除「加粗斜体（B/I）」独立按钮**：加粗 + 斜体组合表达，移除后 B/I 各自高亮。
+- **Moleculer「标准右手视图」换图标**：`RotateCcw` → `Axis3d`（3D 坐标轴），与「重置视图」区分。
+- **流程图节点连接快捷新建菜单移除「表格」**：过滤 `table`（流程图节点无意义）。
+- **分组柱状图 UI 入口移除**：builder / 类型保留以兼容旧档。
+
 ### 早期已完成 (Earlier)
 - `.ctt` 文件关联与双击打开。
 - 图片拖入打开（含 SVG 向量导入到当前 Canvas）。
 - 语言切换器移至主题右侧。
-- 保存后误报“未保存”的问题修复。
+- 保存后误报「未保存」修复。
+
+## [Unreleased]
 
 ---
 
-> 版本号见 `package.json`（`version` 字段）。正式发布时请将“未发布”小节替换为对应版本号与发布日期。
+> 版本号见 `package.json`（`version` 字段）。新功能开发期间请累积在对应版本的"未发布"小节；正式发布时将该小节标题替换为版本号与发布日期。

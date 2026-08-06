@@ -24,6 +24,8 @@ public/ketcher/
 
 # generated Pyodide distribution (copied from node_modules by scripts/copy-pyodide.mjs)
 pyodide-dist/
+# Draw.io (diagrams.net) webapp — fetched by scripts/fetch-drawio.mjs at build time
+resources/drawio-webapp/
 
 # ===== Facade repo: keep source + binaries OUT of git =====
 # Source code must NOT be published (user opted to distribute binaries only)
@@ -31,6 +33,11 @@ src/
 electron/
 mcp/
 scripts/
+# Platform app sources — also kept OUT (ship binaries only)
+harmonyos/
+ios/
+website/
+server/
 
 # Built installers / unpacked output (distributed via GitHub Releases, not git)
 release/
@@ -38,12 +45,12 @@ dist/
 dist-web/
 build/
 
-# Python (backend venv + caches; server source lives in server/ and IS committed)
+# Python (backend venv + caches; server/ whole dir kept OUT of facade repo)
 .venv/
 venv/
 __pycache__/
 *.pyc
-server/__pycache__/
+server/
 
 # Project-local data (not source, not for publish)
 .workbuddy/
@@ -83,3 +90,41 @@ chemthistry-sketcher-technical-proposal.md
 graphviewer-technical-design.md
 chemthistry-global-framework.md
 RELEASE_NOTES_DRAFT.md
+
+# ===== HarmonyOS NEXT — whole source kept OUT of facade repo (see facade block above) =====
+# The following specifics are redundant now that harmonyos/ is ignored, kept for clarity
+harmonyos/**/rawfile/www/
+# hvigor / ohpm working dirs
+harmonyos/oh_modules/
+harmonyos/.hvigor/
+harmonyos/entry/build/
+harmonyos/entry/.preview/
+harmonyos/local.properties
+# generated HAP / HAR / sign material
+harmonyos/**/*.hap
+harmonyos/**/*.hsp
+harmonyos/**/*.har
+harmonyos/**/sign/
+# Manual release signing material (release.p12 private key + cer/p7b/csr) — NEVER commit
+harmonyos/signing/
+
+# ===== Generated / exported media (AI raw images, 小红书 配图等, regenerable) =====
+generated-images/
+outputs/
+
+# ===== Deploy artifacts (built tarball, not source) =====
+chemthistry-web-deploy.tar.gz
+*-deploy.tar.gz
+
+# ===== iOS (Capacitor) — whole source kept OUT of facade repo (ship binaries only) =====
+ios/
+
+# ===== Website (Astro sub-project) — whole source kept OUT of facade repo =====
+website/
+
+# ===== Scratch / ad-hoc scripts (not project source) =====
+ssr_pos.mjs
+
+# ===== docs: 只保留 AGENT_GUIDE.md，其余全部忽略 =====
+docs/**
+!docs/AGENT_GUIDE.md

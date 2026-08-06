@@ -48,6 +48,9 @@ export default defineConfig({
     },
     define: {
       global: 'globalThis',
+      // Standalone web build flag — always false for the Electron app.
+      // JSON.stringify so Vite/esbuild inject a real boolean.
+      __CTT_WEB__: JSON.stringify(false),
     },
     optimizeDeps: {
       // Pre-bundle ketcher (lazy-loaded heavy dep) at dev-server startup so its
