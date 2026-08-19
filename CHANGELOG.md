@@ -5,6 +5,117 @@
 
 ---
 
+## [0.1.3] - 2026-08-18
+
+### 新增 (Added)
+- **System 模块**
+  - Shift+Tab 跨窗格循环切换页面（按文档顺序跨 pane 切换，含输入框守卫）。
+  - 视口持久化：Canvas 与 GraphViewer 的平移/缩放位置随工程保存，重新打开自动恢复。
+  - 直接双击 `.ctt` 打开时自动恢复首个文档标签页（修复 "no document open" 空白）。
+  - 撤销历史合并窗口改为手势感知（相邻操作 >50ms 视为新手势先 flush，拖拽爆发仍合并，保留重做）。
+  - 控制台（ConsolePanel）桌面端拆为两列：左侧 History 常驻，右侧 Terminal/AI 标签切换；移动端保留原堆叠。
+  - 删除快捷键 `X`（无修饰键、非输入态）派发 `ctt:delete-selected`，Canvas / FlowViewer 监听删除选中对象。
+- **Sketcher 模块**
+  - 可拖动「Render settings」浮动面板（视口内钳制，仅 ✕ 关闭）。
+  - 默认渲染字号 18px（经 `editor.setOptions` 设置，避免 `ketcher.setSettings` 丢弃字号）。
+  - Apply 保持面板打开；Show Hydrogen Labels 默认 Off。
+  - 选中单原子可编辑 Atom Label（受控输入，写入结构）。
+  - 文字 / 简单对象经 V3000 molfile 持久化，重载自动往返保留。
+  - Canvas 导入的 sketch 改为可编辑 Fabric 组（路径 / 圆 / 文本可在画布内独立编辑）。
+- **Canvas / 绘图模块**
+  - 钢笔：未选中对象时沿现有路径绘制改为新建锚点，避免误改旧路径。
+  - 剪刀：仅光标直接悬停锚点高亮（移除常驻全锚点显示）；剪切时叠加 smart guide。
+  - 属性面板九宫格参考点吸附到活动参考点（九点落到网格交点）。
+  - 绘图区 smart guide 迟滞防抖、矩形圆角控制点（独立副本防原型污染）、修复「置于底层」被白页遮挡。
+  - 消除加载后 world(0,0) 处的幽灵页面标记点（载体矩形强制不可见）。
+- **Outliner / Project Explorer**
+  - 文档树多选（Ctrl/⌘ 切换、Shift 范围选）；Ctrl/⌘+F2 批量重命名（前缀 + 序号）；`M` 移入当前活动文件夹。
+- **成组隔离模式**：双击分组进入隔离模式编辑，提供退出按钮。
+- **Moleculer**：多帧时间线（帧滑块 / 播放 / 速度 0.2×–5× / 持久化）已完善。
+- **FlowViewer**：连线扇出减少共享 handle 重叠、连接预览改 S 曲线、拖拽跳过 obstacle 重建提性能、`onConnect` 几何选默认锚点。
+- **国际化**：7 语种（en / zh-CN / zh-TW / fr / es / ja / da）补齐 v0.1.3 相关键，切换语言无缺失回退。
+
+### 新增 (Added) — 2026-08-12 起追加
+- **Canvas 图片「真裁剪」（PPT 式）**：裁剪不再只是遮罩——点「完成」后将裁剪窗口烘焙进图片（写入 `cropX/cropY` + 收缩 `width/height`，缩放不变不拉伸），图片边界框真正收缩到裁剪区域；支持多次累积裁剪、圆角保留、一键「重置裁剪」恢复源图；裁剪可撤销。裁剪框精确覆盖图片（`getCenterPoint` 定位）、手柄拖拽对边固定、工具条跟随裁剪框下方、按钮加大。
+- **Canvas 隔离模式扩展**：双击任意对象进入隔离编辑（外部对象变半透明且不可选中），表格单元格文字等可正常编辑，退出按钮返回。
+- **Canvas 文字工具支持 LaTeX 公式**：源码实时编辑 + 渲染预览，可随时改回源码；大公式渲染性能优化。
+- **Canvas 表格工具**：左侧工具箱 Add 菜单新增「表格」（快捷键 B，行列可配置），表格为单对象 Textbox 方案便于隔离编辑。
+- **Canvas 旋转绕九宫格参考点**：属性面板数值 + 画布拖拽手柄统一绕活动参考点旋转（参考点随对象旋转感知）。
+- **Canvas direct-select 顶点编辑重构**：锚点/控制点缩小、Shift 跨路径锚点多选、框选只选锚点（去掉整对象蓝框）、圆角把手扩展到多边形/星形。
+- **Canvas Outliner 增强**：右键菜单补全（新建文件夹 / 移动 / 复制粘贴 / 删除）、空白处右键「添加图形」、拖入文件夹后把手修复、选中文件夹内对象只选该对象、图层操作不脱离文件夹。
+- **Canvas 智能参考线（smart guides）打磨**：吸附滞回死区（Schmitt 触发 + 锁定吸附点）、磁吸抖动根治（stale aCoords 反馈振荡）、对象多时性能优化。
+- **Canvas 页面设置弹层分页（Tab）**；删除「出血 + 裁切标记」，透明导出保留。
+- **Sketcher 左侧工具箱完整镜像 Ketcher 左栏**：全部分组折叠（flyout 单行展开）、自定义电荷/自由基/双自由基图标、常用分子片段（8 个环）内置、模板库入口。
+- **Sketcher 结构操作全链路打通**：芳香化 / 去芳香化 / CIP / 结构检查（Check）/ 计算值（calculated-values）/ 显式氢（explicit-H）全部经 `structService` 直调修通，自建结果弹窗（质量组成逐元素展示）。
+- **Sketcher 字体多选下拉**（根治 Ketcher 渲染硬编码字体）、**文字上下标快捷键**（Ctrl/⌘+= 下标、Ctrl/⌘+Shift+= 上标）、下标字号默认=正常字号。
+- **Sketcher 键型 / 取代基数字快捷键**：悬停化学键按 `1–5` 就地改键型（单/双/三/楔/虚）、悬停原子按 `0–9` 生长取代基（7=双键氧）、空白处按 `1/2/3` 切换单键/双键/三键工具。
+- **Sketcher 其余快捷键**：Space 选中最后操作的分子片段（选择也算操作）、V 键矩形选择（与全局 Shift+Tab 解冲突）、Shift+A 两段式添加。
+- **Sketcher 工具栏按钮快捷键标注**：保存 `⌘S`、复制/剪切/粘贴 `⌘C/X/V`、撤销 `⌘Z`、重做 `⌘⇧Z`/`Ctrl+Y`、键型工具 `1/2/3`（mac 显示 ⌘、其他平台 Ctrl+）。
+- **Sketcher 文字持久化**（KET 双字段保存）、Atom Label 自定义元素符号、SMILES 加载修通（含坐标重建，杜绝原子塌缩）。
+- **Sketcher 设置面板**：移除 Server / 3D Viewer 冗余 Tab、样式下拉移入设置、与画布侧面板布局对齐；缩放速度调优、切页返回画布铺满（修 letterbox 与多余滚动条）。
+- **DataViewer Excel 式粘贴**：选中单元格后 Ctrl/⌘+V，剪贴板二维数据（Tab/逗号/分号自动识别）从该格开始填充，越界自动扩展行列，单步撤销（store `pasteRange` 单事务）。
+- **DataViewer 自动填充把手**：框选右下角蓝色把手，两格拖动等差填充、一格复制填充；支持向右扩展（新列以首列作基准）；排序/筛选状态不错位（显示行 `row-index`+`col-id` 映射存储行）；拖动时实时高亮将填充区域。
+- **DataViewer 编辑体验**：单元格编辑跨应用切换保持（窗口失焦不再退出编辑）、输入中途点击其他单元格先保存当前输入（`onCellEditingStopped` + `newValue` 确定性兜底）。
+- **Moleculer 支持 Gaussian 输出**：`.out/.log` 多步优化（Standard/Input orientation 坐标块）= 多帧时间轴、`.gjf` 输入单帧。
+- **Moleculer 支持 VASP 输出**：`XDATCAR` 逐离子步解析（Direct 分数坐标×晶格→笛卡尔）= 多帧；`POSCAR/CONTCAR/XDATCAR` 无后缀文件按名称 + 内容嗅探自动识别（文件选择器移除 accept 扩展名过滤）。
+- **Moleculer 多分子 SDF**（`$$$$` 分隔）按多帧载入；时间轴播放速度上限提升至 20×。
+- **全局撤销体系重做**：DataViewer / Moleculer / GraphViewer 撤销失效修复（移除空撤销处理器拦截，快捷键回退全局历史）；图表配置（`setGraphPlot`）补入撤销栈；菜单 / 命令面板 / 顶栏按钮 / 快捷键的撤销重做统一按当前视图路由（画布与结构式走各自本地栈）；菜单与按钮的可用状态反映当前视图。
+- **Canvas 撤销栈大修**：撤销语义修正（一次撤销即生效，自动弹掉「操作后状态」冗余快照）、初始状态入栈、撤销结果持久化（切页/重开不丢）、快速连按不污染栈、异常不再导致撤销永久失效。
+- **新建工程向导简化**：不再要求填写工程名称（保存后自动采用文件名；状态栏 `📄 xxx.ctt` 双击仍可改名，同步最近打开列表）。
+- **Shift+Tab 切换器**：缩略图修复（DataViewer/Sketcher/FlowViewer 预览、缩放裁切、懒抓取未激活页、Canvas/GraphViewer 捕获优先级）、方向键导航、包含全部项目文档。
+- **应用内 AI 新增结构式与 3D 分子操作**：AI Chat 工具 13 → 17，新增 `add_sketch` / `read_sketch`（Sketcher 结构式文档读写，MOLfile V2000 / KET + 视口）与 `add_molecule` / `read_molecule`（Moleculer 3D 分子文档读写，cif/xyz/mol/pdb/sdf/mlcl + view/bonds），创建后自动打开为活动标签页，单步可撤销；与 MCP 同名工具语义一致。
+- **其他**：`X` 删除快捷键确认弹窗、标签栏死区消除、DataViewer 预览绕过渲染引擎兼容性问题（Canvas 2D 手绘缩略图）。
+
+### 修复 (Fixed)
+- 撤销记录因固定合并窗口导致的连续操作被吞并问题（改为手势感知合并）。
+- 双击 `.ctt` 直接打开后内容被欢迎屏遮盖 / 显示空白（统一在 `openProjectByPath` 隐藏欢迎屏 + 渲染端主动拉取路径，race-free）。
+- **表格 / 图表 / 分子视图撤销无反应**：DataViewer / Moleculer / GraphViewer 注册的空撤销处理器吞掉快捷键（其修改早已入全局栈却无法撤销）。
+- **图表配置永不入撤销栈**：`setGraphPlot` 只写 store 未 push 历史。
+- **画布撤销多项**：拖动对象撤销无效、删除需多次、撤销后切页丢失、快速连按错乱、`loadFromJSON` 失败导致撤销与自动保存永久失效。
+- **图片裁剪**：裁剪框错位（右下角压住图片中心）、拖手柄对边跟着动、完成后图片被拉伸到原长宽、点「完成」无反应、工具条位置与按钮尺寸。
+- **结构式编辑器**：芳香化 / 去芳香化 / 结构检查 / 计算值 / 显式氢点按钮无反应（隐藏工具栏禁用 + `structService` 调用方式）、字体下拉空白、SMILES 加载原子塌缩、切页返回画布两侧空白列 / 多余滚动条、状态栏缩放 % 跳回 100%。
+- **数据表**：编辑中途点击别处输入丢失（`cellEditingStopped` 事件字段实为 `newValue`）、切应用后编辑退出（`onBlurCapture` 拦截窗口失焦）、粘贴不生效（document 级 capture 监听）。
+- **Shift+Tab 切换器缩略图**：DataViewer/Sketcher/FlowViewer 空白、缩放裁切异常、未激活页无预览、Canvas/GraphViewer 预览不完整、html2canvas 崩溃（AG Grid 不支持 CSS `color(srgb…)`）。
+- **其他**：加载后 world(0,0) 幽灵点、标签栏死区、控制台分隔条不可拖动、双 Y 轴切换轴标题不跟随、四边坐标轴 tick 渲染、图表导出样式丢失（`seriesStyles` 缺失）、状态栏 Python/已保存指示器、文档右键菜单本地化、文件夹移动 `parentId` 同步、工程加载类型错误。
+
+---
+
+## [0.1.2] - 2026-08-04
+
+### 新增 (Added)
+- **全新流程图插件（FlowViewer）〔重点新增〕**：独立的流程图模块，可作为插件在应用中打开，用于绘制出版级流程图 / 示意框图。基于 `@xyflow/react 12.11.2`，支持节点 / 边编辑、从连接点拉出快捷新建目标节点；排版工具含对齐（左 / 右 / 顶 / 底 / 水平居中 / 竖直居中）、按间距分布（水平 / 垂直）、水平 / 垂直翻转；工具栏按钮悬停显示已绑定快捷键、新增翻转按钮（⌘/Ctrl+Shift+H / V）；导出 Canvas 时箭头改真实 `<path>` 三角、文字补 `dominant-baseline="middle"`；文档配色集中 `src/lib/docColors.ts`（`DOC_TYPE_COLOR`）；非英文界面显示本地化译名。
+- **全局撤销 / 重做**：应用级历史栈（`historyStore` 结构化快照 + 250ms 合并窗），覆盖文档增删改、画布对象编辑、图表属性调整等；⌘/Ctrl+Z 撤销、⇧+⌘/Ctrl+Z 重做。
+- **DataViewer 数据整理增强**：排序 / 筛选 / 缺失值处理改走自定义对话框写回 `columns[].values`（可撤销）；排序时缺失值恒置末尾，筛选支持多规则 AND，缺失值支持删除行 / 固定值填充 / 均值 / 中位数 / 线性插值（`datasetStore.sortRows` / `filterRows` / `handleMissing`）。
+- **GraphViewer 模板系统 + LaTeX 渲染**：① 内置 4 个只读预设模板（`BUILTIN_TEMPLATES`，仅带主题），并支持 localStorage 保存自定义模板（紧凑子集：图表类型 / 维度、系列样式、标题 / 轴标签、图例 / 网格、对数轴、几何与 14 个轴字段），`applyTemplate(...,true)` 重风格化。② 标题与 X/Y 轴名支持 LaTeX（`$...$` → KaTeX → 栅格化注入，PDF/EPS/SVG/PNG 一致）；分类轴刻度标签支持 LaTeX（SVG 渲染器特殊处理、注入 `<image>`）；3D 网格不做轴名 LaTeX。
+- **Canvas 9 点参考点（RefPoint）**：模块级参考点系统（9 宫格 `REF_POINTS/REF_FRACTION/REF_POINT_LABEL` + `RefPointPicker`），固定参考点后缩放 / 尺寸编辑锚定该点（兼容 scale 与几何烘焙两条路径），状态存 `localStorage('ctt-canvas-refPoint'，默认 tl)`，7 语言 i18n。
+- **Sketcher ACS1996 风格 + CDX 导入**：绘图遵循 ACS 1996 配色与线宽规范；支持导入 `.cdx` / `.cdxml` 矢量结构文件。
+- **Moleculer 3D 增强**：① 电荷密度体绘制（volumetric，须 register-then-rebuild 避免被 `removeAllShapes` 清掉）；② 多帧轨迹播放（换结构先 `removeVolumeData`）；③ Cartoon / Ribbon 二级结构（须 `spec.cartoon={ribbon:true}`）；④ 分子表面 SAS / SES / VDW（可调不透明度，默认 0.6）；⑤ orthographic 投影 + 仅 CIF 扩胞 + 透明背景，导出 PNG ≤4096²。
+- **新建工程向导模板扩充**：`StartWizard` 新增 结构编辑器(Sketcher) / 分子视图(Moleculer) / 画布(Canvas) 三个首页模板，与「空白」「动力学示例」并列共 5 个起始模板（`src/lib/startProjects.ts`）。
+- **工具栏 / 工具箱快捷键提示**：Canvas 与 Flow 工具栏按钮 tooltip 显示已绑定快捷键，格式 `名称（键）`（半角括号）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V），复用 `canvas.flipHorizontal/Vertical` i18n；新增 `canvas.curvature` 等键（7 语言）。
+- **应用内 AI Chat 多模态图片上传**：控制台 AI 标签页 ImagePlus 按钮、一次多选；待发缩略图可逐个移除；发送时浏览器端降采样（最长边 ≤1568px、转 JPEG 0.8）后以多模态片段随消息发出，普通流式与 Agent 工具循环两路径均支持；用户气泡回显图片、支持「仅发图」。需视觉模型（如 `gpt-4o`）。`ChatMessage.images` / `send(text, images?, onStream?)` / `toApiContent` / `readImageFile`。
+- **通道 A（应用内 AI Chat）Canvas 工具**：`src/lib/ai/tools.ts` 工具 11 → 13，新增 `add_canvas`（建画布并可选写入 Fabric JSON、自动打开）与 `read_canvas`（按 id/name 读内容与对象数），走运行中 store（`addDoc` / `setCanvasContent` / `openDoc`）。
+- **MCP 暴露 Canvas**：`mcp/chemthistry-mcp.mjs` 工具 13 → 15，新增 `add_canvas` / `read_canvas`（读写 `.ctt`，与通道 A 同名语义一致但后端不同）；冒烟测试 32 断言通过。
+- **应用内 Help「Image Upload」小节**：英文源 + 6 语言译文（zh-CN / zh-TW / fr / es / ja / da）的 AI Chat 章节补图片上传说明。
+
+### 修复 (Fixed)
+- **Shift+A 按光标区域分流**：改用 `getRegionAtPoint` / `getRegionUnderPointer` 在按键瞬间实时命中测试光标位置（不再用 `getActiveRegion()`，hover 不刷新），修复悬停误判弹错菜单。
+- **流程图图标颜色一致化**：抽出 `DOC_TYPE_COLOR`（`docColors.ts`），项目管理器树与关系图谱共用，Flow 两边均为 `#5b6bd6`。
+- **动力学示例 GraphViewer 空白**：按列 **id** 绑定（原误用列名导致曲线 / 误差棒解析失败）。
+- **分布算法改为按间距(gap)均分**：首尾物体边缘锚定、中间等间隙铺开，修复大小不一时「中点均分」间隙不均；Canvas `distribute` 与 Flow `distributeNodes` 两处统一（修正 Flow 的 off-by-one）。
+- **工具栏补齐快捷键 + Flow 翻转按钮**：Canvas / Flow 工具栏按钮 title 显示已绑定快捷键（单一来源拼接，避免不一致）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V）。
+
+### 变更 (Changed)
+- **Canvas 文本格式栏移除「加粗斜体（B/I）」独立按钮**：加粗 + 斜体组合表达，移除后 B/I 各自高亮。
+- **Moleculer「标准右手视图」换图标**：`RotateCcw` → `Axis3d`（3D 坐标轴），与「重置视图」区分。
+- **流程图节点连接快捷新建菜单移除「表格」**：过滤 `table`（流程图节点无意义）。
+- **分组柱状图 UI 入口移除**：builder / 类型保留以兼容旧档。
+
+### 早期已完成 (Earlier)
+- `.ctt` 文件关联与双击打开。
+- 图片拖入打开（含 SVG 向量导入到当前 Canvas）。
+- 语言切换器移至主题右侧。
+- 保存后误报「未保存」修复。
+
 ## [0.1.1] - 2026-07-20
 
 ### 新增 (Added)
@@ -79,42 +190,6 @@
 - **移除“新建文档”按钮**：Project Explorer 不再提供通用“新建文档”入口（文档仍可通过欢迎页 / 菜单 / 命令面板 / 各视图内部入口创建）。侧栏底部图标栏现为 6 个按钮：排序 / 显示当前文件 / 全部折叠展开 / 新建文件夹 / 文档 / 偏好设置（头部仅保留标题）。
 
 ---
-
-## [0.1.2] - 2026-08-04
-
-### 新增 (Added)
-- **全新流程图插件（FlowViewer）〔重点新增〕**：独立的流程图模块，可作为插件在应用中打开，用于绘制出版级流程图 / 示意框图。基于 `@xyflow/react 12.11.2`，支持节点 / 边编辑、从连接点拉出快捷新建目标节点；排版工具含对齐（左 / 右 / 顶 / 底 / 水平居中 / 竖直居中）、按间距分布（水平 / 垂直）、水平 / 垂直翻转；工具栏按钮悬停显示已绑定快捷键、新增翻转按钮（⌘/Ctrl+Shift+H / V）；导出 Canvas 时箭头改真实 `<path>` 三角、文字补 `dominant-baseline="middle"`；文档配色集中 `src/lib/docColors.ts`（`DOC_TYPE_COLOR`）；非英文界面显示本地化译名。
-- **全局撤销 / 重做**：应用级历史栈（`historyStore` 结构化快照 + 250ms 合并窗），覆盖文档增删改、画布对象编辑、图表属性调整等；⌘/Ctrl+Z 撤销、⇧+⌘/Ctrl+Z 重做。
-- **DataViewer 数据整理增强**：排序 / 筛选 / 缺失值处理改走自定义对话框写回 `columns[].values`（可撤销）；排序时缺失值恒置末尾，筛选支持多规则 AND，缺失值支持删除行 / 固定值填充 / 均值 / 中位数 / 线性插值（`datasetStore.sortRows` / `filterRows` / `handleMissing`）。
-- **GraphViewer 模板系统 + LaTeX 渲染**：① 内置 4 个只读预设模板（`BUILTIN_TEMPLATES`，仅带主题），并支持 localStorage 保存自定义模板（紧凑子集：图表类型 / 维度、系列样式、标题 / 轴标签、图例 / 网格、对数轴、几何与 14 个轴字段），`applyTemplate(...,true)` 重风格化。② 标题与 X/Y 轴名支持 LaTeX（`$...$` → KaTeX → 栅格化注入，PDF/EPS/SVG/PNG 一致）；分类轴刻度标签支持 LaTeX（SVG 渲染器特殊处理、注入 `<image>`）；3D 网格不做轴名 LaTeX。
-- **Canvas 9 点参考点（RefPoint）**：模块级参考点系统（9 宫格 `REF_POINTS/REF_FRACTION/REF_POINT_LABEL` + `RefPointPicker`），固定参考点后缩放 / 尺寸编辑锚定该点（兼容 scale 与几何烘焙两条路径），状态存 `localStorage('ctt-canvas-refPoint'，默认 tl)`，7 语言 i18n。
-- **Sketcher ACS1996 风格 + CDX 导入**：绘图遵循 ACS 1996 配色与线宽规范；支持导入 `.cdx` / `.cdxml` 矢量结构文件。
-- **Moleculer 3D 增强**：① 电荷密度体绘制（volumetric，须 register-then-rebuild 避免被 `removeAllShapes` 清掉）；② 多帧轨迹播放（换结构先 `removeVolumeData`）；③ Cartoon / Ribbon 二级结构（须 `spec.cartoon={ribbon:true}`）；④ 分子表面 SAS / SES / VDW（可调不透明度，默认 0.6）；⑤ orthographic 投影 + 仅 CIF 扩胞 + 透明背景，导出 PNG ≤4096²。
-- **新建工程向导模板扩充**：`StartWizard` 新增 结构编辑器(Sketcher) / 分子视图(Moleculer) / 画布(Canvas) 三个首页模板，与「空白」「动力学示例」并列共 5 个起始模板（`src/lib/startProjects.ts`）。
-- **工具栏 / 工具箱快捷键提示**：Canvas 与 Flow 工具栏按钮 tooltip 显示已绑定快捷键，格式 `名称（键）`（半角括号）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V），复用 `canvas.flipHorizontal/Vertical` i18n；新增 `canvas.curvature` 等键（7 语言）。
-- **应用内 AI Chat 多模态图片上传**：控制台 AI 标签页 ImagePlus 按钮、一次多选；待发缩略图可逐个移除；发送时浏览器端降采样（最长边 ≤1568px、转 JPEG 0.8）后以多模态片段随消息发出，普通流式与 Agent 工具循环两路径均支持；用户气泡回显图片、支持「仅发图」。需视觉模型（如 `gpt-4o`）。`ChatMessage.images` / `send(text, images?, onStream?)` / `toApiContent` / `readImageFile`。
-- **通道 A（应用内 AI Chat）Canvas 工具**：`src/lib/ai/tools.ts` 工具 11 → 13，新增 `add_canvas`（建画布并可选写入 Fabric JSON、自动打开）与 `read_canvas`（按 id/name 读内容与对象数），走运行中 store（`addDoc` / `setCanvasContent` / `openDoc`）。
-- **MCP 暴露 Canvas**：`mcp/chemthistry-mcp.mjs` 工具 13 → 15，新增 `add_canvas` / `read_canvas`（读写 `.ctt`，与通道 A 同名语义一致但后端不同）；冒烟测试 32 断言通过。
-- **应用内 Help「Image Upload」小节**：英文源 + 6 语言译文（zh-CN / zh-TW / fr / es / ja / da）的 AI Chat 章节补图片上传说明。
-
-### 修复 (Fixed)
-- **Shift+A 按光标区域分流**：改用 `getRegionAtPoint` / `getRegionUnderPointer` 在按键瞬间实时命中测试光标位置（不再用 `getActiveRegion()`，hover 不刷新），修复悬停误判弹错菜单。
-- **流程图图标颜色一致化**：抽出 `DOC_TYPE_COLOR`（`docColors.ts`），项目管理器树与关系图谱共用，Flow 两边均为 `#5b6bd6`。
-- **动力学示例 GraphViewer 空白**：按列 **id** 绑定（原误用列名导致曲线 / 误差棒解析失败）。
-- **分布算法改为按间距(gap)均分**：首尾物体边缘锚定、中间等间隙铺开，修复大小不一时「中点均分」间隙不均；Canvas `distribute` 与 Flow `distributeNodes` 两处统一（修正 Flow 的 off-by-one）。
-- **工具栏补齐快捷键 + Flow 翻转按钮**：Canvas / Flow 工具栏按钮 title 显示已绑定快捷键（单一来源拼接，避免不一致）；FlowViewer 新增翻转按钮（Ctrl/⌘+Shift+H/V）。
-
-### 变更 (Changed)
-- **Canvas 文本格式栏移除「加粗斜体（B/I）」独立按钮**：加粗 + 斜体组合表达，移除后 B/I 各自高亮。
-- **Moleculer「标准右手视图」换图标**：`RotateCcw` → `Axis3d`（3D 坐标轴），与「重置视图」区分。
-- **流程图节点连接快捷新建菜单移除「表格」**：过滤 `table`（流程图节点无意义）。
-- **分组柱状图 UI 入口移除**：builder / 类型保留以兼容旧档。
-
-### 早期已完成 (Earlier)
-- `.ctt` 文件关联与双击打开。
-- 图片拖入打开（含 SVG 向量导入到当前 Canvas）。
-- 语言切换器移至主题右侧。
-- 保存后误报「未保存」修复。
 
 ## [Unreleased]
 

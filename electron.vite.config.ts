@@ -56,7 +56,13 @@ export default defineConfig({
       // Pre-bundle ketcher (lazy-loaded heavy dep) at dev-server startup so its
       // dynamic-import chunk hash stays stable and doesn't break mid-session
       // after a config/package change forces a re-optimize (same fix as web).
-      include: ['ketcher-react', 'ketcher-core', 'ketcher-standalone'],
+      // `ketcher-react`'s entry (`dist/index.js`) does a lazy
+      // `import('./index.modern-7545f4b2.js')`; including `ketcher-react` makes
+      // Vite pre-bundle that split chunk in the FIRST optimize pass, so the
+      // renderer and the on-disk chunk always share one stable hash for the
+      // whole session (no second-pass hash flip -> no
+      // "Failed to fetch dynamically imported module").
+      include: ['ketcher-react', 'ketcher-core', 'ketcher-standalone', 'font-face-observer'],
     },
     build: {
       commonjsOptions: {
@@ -77,6 +83,31 @@ export default defineConfig({
         },
       },
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: 'ctt-font-face-observer-patch',
+        enforce: 'pre',
+        // Redirect every `font-face-observer` import/require (Sketcher's import
+        // AND ketcher-react's internal require) to our single patch module, so
+        // the prototype patch applies to the exact instance Ketcher uses. The
+        // patch module itself imports the real package by bare name; we let that
+        // resolve normally so Vite pre-bundles it as proper ESM with a `default`
+        // export. This avoids the dev-only
+        //   "does not provide an export named 'default'"
+        // crash that importing the raw CJS src/observer.js produced (build was
+        // fine because esbuild synthesized the default export there).
+        resolveId(source, importer) {
+          if (
+            source === 'font-face-observer' &&
+            importer &&
+            !importer.includes('patches/font-face-observer')
+          ) {
+            return resolve(__dirname, 'src/patches/font-face-observer.ts')
+          }
+          return null
+        },
+      },
+    ],
   },
 })

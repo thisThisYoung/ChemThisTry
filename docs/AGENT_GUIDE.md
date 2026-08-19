@@ -8,7 +8,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 
 | 通道 | 运行位置 | 面向对象 | 适用场景 |
 |------|----------|----------|----------|
-| **A. 内置 AI Chat Agent 模式** | 应用进程内（渲染进程） | 应用内置的对话助手 | 用户在软件里用自然语言驱动当前打开的工程 |
+| **A. 内置 Agent Agent 模式** | 应用进程内（渲染进程） | 应用内置的对话助手 | 用户在软件里用自然语言驱动当前打开的工程 |
 | **B. MCP Server** | 独立 Node 进程（stdio） | 外部 MCP 客户端（Claude Desktop / Cline / Continue 等） | 在应用之外读写 `.ctt` 文件、批量生成工程 |
 | **C. 插件 API / 命令** | 应用进程内（插件） | 第三方插件、程序化调用 | 扩展命令、视图、导出格式，供 A 通道的 `run_command` 调用 |
 
@@ -18,7 +18,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 
 ## 1. 能力总览
 
-| 能力 | A：AI Chat 工具 | B：MCP 工具 | 底层实现 |
+| 能力 | A：Agent 工具 | B：MCP 工具 | 底层实现 |
 |------|-----------------|-------------|----------|
 | 列出文档 | `list_documents` | `read_project` | `useProjectStore.docs` / `.ctt` |
 | 读取数据表 | `get_sheet_data` | `read_sheet` | `useDatasetStore.getDataset` |
@@ -41,7 +41,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 
 ---
 
-## 2. 通道 A —— 内置 AI Chat Agent 模式
+## 2. 通道 A —— 内置 Agent Agent 模式
 
 ### 2.1 开启方式
 
@@ -64,9 +64,9 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
   4. 模型返回不含工具调用的普通文本即为最终答复。
 - 工具直接操作 zustand store / 命令注册表 / 侧车 IPC，**不新增任何主进程接口**——智能体走的正是用户点按钮时走的同一套状态通路。
 - 数据表、列均**按人类可读的名称寻址**（大小写不敏感），也可用内部 id。
-- 用户可在 AI Chat 中**附加图片**（截图、谱图、结构式等）；图片在浏览器端降采样（最长边 ≤1568px、JPEG 0.8）后以 `image_url` 多模态片段随消息发出，**流式**与 **Agent** 两条路径都支持。用户附带图片的 `user` 消息在 `ChatMessage.images` 上携带 data URL，构造请求时由 `toApiContent()` 转成 OpenAI 多模态 `content` 数组。
+- 用户可在 Agent 中**附加图片**（截图、谱图、结构式等）；图片在浏览器端降采样（最长边 ≤1568px、JPEG 0.8）后以 `image_url` 多模态片段随消息发出，**流式**与 **Agent** 两条路径都支持。用户附带图片的 `user` 消息在 `ChatMessage.images` 上携带 data URL，构造请求时由 `toApiContent()` 转成 OpenAI 多模态 `content` 数组。
 
-### 2.3 工具清单（13 个）
+### 2.3 工具清单（17 个）
 
 以下为暴露给模型的 `TOOL_SCHEMAS`。参数中标注 `*` 为必填。
 
@@ -134,6 +134,32 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 按 id 或名称读取某画布，返回其 Fabric JSON `content` 原串及解析出的对象数 `objectCount`。
 - `canvas*`
 返回：`canvasId / canvasName / content / objectCount`。
+
+#### `add_sketch`
+新建一张 2D 化学结构式文档（Sketcher / 结构编辑器）并打开为活动标签页。
+- `structure*`：MOLfile V2000（或其它 Ketcher 可解析）结构文本
+- `name`：结构式名（省略则自动编号）
+- `view`：可选 Ketcher 视口状态 JSON（缩放 + 滚动偏移）
+返回：`sketchId / sketchName`。
+
+#### `read_sketch`
+按 id 或名称读取某结构式文档，返回其 `structure`（MOLfile）、`structureKet`（KET，若存在）与视口 `view`。
+- `sketch*`
+返回：`sketchId / sketchName / structure / structureKet / view`。
+
+#### `add_molecule`
+新建一个 3D 分子文档（Moleculer）并打开为活动标签页。
+- `text*`：原始结构文本（CIF / XYZ / MOL / PDB / SDF / …）
+- `format`：3Dmol 可解析的格式（`cif | xyz | mol | pdb | sdf | mlcl`，默认 `mol`）
+- `name`：分子名（省略则自动编号）
+- `view`：可选 `MoleculeView` 状态对象（样式、相机等）
+- `bonds`：可选显式键列表 `[{ i, j, order? }]`（原子索引从 1 起）
+返回：`moleculeId / moleculeName / format`。
+
+#### `read_molecule`
+按 id 或名称读取某分子文档，返回其 `text / format / view / bonds`。
+- `molecule*`
+返回：`moleculeId / moleculeName / text / format / view / bonds`。
 
 ### 2.4 对话示例
 
@@ -339,7 +365,7 @@ interface UserPrefs {
 | 主题 | 文件 |
 |------|------|
 | AI 工具层（13 工具 + 分发器） | `src/lib/ai/tools.ts` |
-| AI Chat 客户端 + Agent 循环 | `src/lib/aiChat.ts` |
+| Agent 客户端 + Agent 循环 | `src/lib/aiChat.ts` |
 | Agent 模式开关 UI / 首选项面板（分组导航 + 搜索 + 分区恢复默认） | `src/components/settings/PreferencesModal.tsx` |
 | 首选项标签页枚举（`PrefTab`） | `src/store/preferencesStore.ts` |
 | 用户偏好读写（`UserPrefs` / `resetUserPrefs`） | `src/lib/userPrefs.ts` |
