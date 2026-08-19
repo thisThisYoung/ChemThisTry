@@ -29,7 +29,7 @@ ChemThisTry 由五个相互联动的模块组成，共享一个无限画布工�
 - 导出 Export: `.png` · `.svg` · `.pdf` · `.eps` → Moleculer / → Canvas
 
 ### 🧪 Moleculer — 3D 分子与晶体 3D molecules & crystals
-基于 3Dmol.js 的 VESTA 风格晶胞与配位多面体，支持超胞扩展、左右手坐标系切换，并可通过 Python 侧车（RDKit）优化构象。VESTA-style unit cells and coordination polyhedra powered by 3Dmol.js, with supercell expansion, handedness switching, and conformer optimization via the Python sidecar (RDKit).
+基于 3Dmol.js 的晶胞与配位多面体，支持超胞扩展、左右手坐标系切换，并可通过 Python 侧车（RDKit）优化构象。Unit cells and coordination polyhedra powered by 3Dmol.js, with supercell expansion, handedness switching, and conformer optimization via the Python sidecar (RDKit).
 - 导入 Import: `.cif` · `.pdb` · `.xyz` · `.mol` · `.mol2` · `.sdf` · `.pqr` · `.vesta` · `.mlcl` · VASP（`POSCAR` / `CONTCAR`）
 - 结构导出 Export structure (ASE): `.pdb` · `.cif` · `.xyz` · extended XYZ · VASP · GEN · CFG
 - 图片导出 Export image: `.png` · `.pdf` · 保存 `.mlcl` (save `.mlcl`)
@@ -46,21 +46,31 @@ ChemThisTry 由五个相互联动的模块组成，共享一个无限画布工�
 - 首选项 Preferences: 左侧分组导航 + 内容区的主从式设置面板，涵盖外观 / 主题、图表默认、导出默认、快捷键一览、AI 助手、插件；支持顶部搜索定位与分区 / 全局「恢复默认」。A master-detail settings panel (grouped left-side navigation + content area) covering appearance / theme, graph defaults, export defaults, a keyboard-shortcut reference, the AI assistant, and plugins — with a search box and per-section / global "Reset to defaults". On mobile (phone web), the AI / Plugins / Shortcuts tabs are hidden to reduce clutter, leaving only General / Graph / Export / About.
 - 帮助中心 Help center: 内置的分节文档（快速上手、各模块指南、疑难排查）与「关于」页（版本号、官网 / 源码链接、许可证、技术栈）。Built-in sectioned documentation (getting started, per-module guides, troubleshooting) plus an About page (version, website / source links, license, tech stack).
 
+### ✨ v0.1.3 新增 What's new in v0.1.3
+
+- **数据作图 GraphViewer:** 双 Y 轴 · 热力图 · 雷达图 · 轴截断 · 非线性拟合（Python 侧车）。Dual-Y axes, heatmaps, radar charts, axis breaks, and nonlinear curve fitting (via the Python sidecar).
+- **关系图谱 Relationship graph:** 数据点之间的关联关系视图。A relationship/network view linking data points.
+- **全局撤销 / 重做 Global undo & redo:** 跨模块统一的撤销 / 重做历史。Unified undo / redo history across modules.
+- **结构绘制 Sketcher:** ACS 1996 绘图样式 · `.cdx` 文件导入。ACS 1996 drawing style and `.cdx` import.
+- **3D 分子 Moleculer:** 分子表面 · 多帧动画（轨迹 / 多步优化）。Molecular surfaces and multi-frame playback (trajectories / multi-step optimizations).
+- **矢量画布 Canvas:** 9 点参考点对齐（吸附与定位）。9-point reference alignment for snapping and positioning.
+- **工程导航 Project tree:** 文件夹式工程树导航。Folder-style project tree navigation.
+
 ## 下载 Download
 
 macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-built installers for macOS, Windows, and Linux are published on the Releases page.
 
 👉 最新版 Latest: https://github.com/thisThisYoung/ChemThisTry/releases/latest
 
-👉 v0.1.1: https://github.com/thisThisYoung/ChemThisTry/releases/tag/v0.1.1
+👉 v0.1.3: https://github.com/thisThisYoung/ChemThisTry/releases/tag/v0.1.3
 
 | 平台 Platform | 文件 File |
 |---------------|-----------|
-| macOS（Apple Silicon） | `ChemThisTry-0.1.1-arm64.dmg`  ·  `ChemThisTry-0.1.1-arm64-mac.zip` |
-| macOS（Intel） | `ChemThisTry-0.1.1.dmg`  ·  `ChemThisTry-0.1.1-mac.zip` |
-| Windows | `ChemThisTry-0.1.1.exe` |
-| Linux（便携版 portable） | `ChemThisTry-0.1.1.AppImage` |
-| Linux（Debian/Ubuntu） | `ChemThisTry-0.1.1.deb` |
+| macOS（Apple Silicon） | `ChemThisTry-0.1.3-arm64.dmg` |
+| macOS（Intel） | `ChemThisTry-0.1.3.dmg` |
+| Windows | `ChemThisTry Setup 0.1.3.exe` |
+| Linux（便携版 portable） | `ChemThisTry-0.1.3.AppImage` |
+| Linux（Debian/Ubuntu） | `chemthistry_0.1.3_amd64.deb` |
 
 下载对应平台的文件按常规安装即可，无需账号或构建步骤。Apple Silicon（M 系列）Mac 用 `-arm64` 版本；Intel Mac 用无芯片后缀的版本。Download the file for your platform and install as usual — no account or build step required. On Apple Silicon Macs use the `-arm64` build; Intel Macs use the file with no arch suffix.
 
@@ -81,8 +91,8 @@ macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-bui
 2. 点仍要运行。Click Run anyway.
 
 ### Linux
-- **AppImage:** 赋予执行权限后运行。chmod +x then run: `chmod +x ChemThisTry-0.1.1.AppImage`
-- **.deb:** 如缺依赖用 `sudo apt-get install -f` 补齐。Install with `sudo dpkg -i ChemThisTry-0.1.1.deb` (resolve deps via `sudo apt-get install -f` if needed).
+- **AppImage:** 赋予执行权限后运行。chmod +x then run: `chmod +x ChemThisTry-0.1.3.AppImage`
+- **.deb:** 如缺依赖用 `sudo apt-get install -f` 补齐。Install with `sudo dpkg -i chemthistry_0.1.3_amd64.deb` (resolve deps via `sudo apt-get install -f` if needed).
 
 ## Python 侧车 Python sidecar
 
@@ -116,6 +126,7 @@ macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-bui
 ## 项目状态 Status
 
 - 本仓库为发布 / 门面仓库，分发编译产物与文档；完整源码暂未公开，就绪后将以 Apache-2.0 开源。This repository is the release / facade repo — it distributes the built application and documentation; the full source is not yet public and will be opened under Apache-2.0 when ready.
+- 当前版本 v0.1.3（2026-08）。Current release: v0.1.3 (Aug 2026).
 - 当前构建未签名，签名 / 公证在计划中。Builds are currently unsigned; signing / notarization is planned.
 
 ## 反馈 Feedback
