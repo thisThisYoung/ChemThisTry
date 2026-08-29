@@ -1,6 +1,6 @@
 {
   "name": "chemthistry",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "ChemThisTry - All-in-One Scientific Visualization Workstation",
   "main": "out/main/index.js",
   "author": "ChemThisTry Team",
@@ -55,6 +55,7 @@
     "ketcher-react": "^3.15.0",
     "ketcher-standalone": "^3.15.0",
     "lucide-react": "^0.460.0",
+    "mathjax-full": "^3.2.2",
     "mitt": "^3.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

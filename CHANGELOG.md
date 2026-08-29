@@ -5,6 +5,23 @@
 
 ---
 
+## [0.1.4] - 2026-08-28
+
+### 新增 (Added)
+- **GraphViewer**: 系列外观新增「纵坐标偏移」(Y Offset) 属性，控制每个系列相对自身纵轴的上下偏移（不改坐标轴范围、不影响其它系列）；复制/粘贴样式天然兼容（随 `seriesStyles` 深拷贝往返）。
+- **Project Explorer**: 右键菜单显示快捷键提示并执行——重命名 `F2`、关闭标签页 `⌘/Ctrl+W`、删除 `X`、复制/粘贴 `⌘/Ctrl+C/V`、复制/粘贴样式 `⌘/Ctrl+Shift+C/V`、全选 `⌘/Ctrl+A`（菜单打开时在 `window` 捕获阶段注册、命中即 `stopImmediatePropagation`，避免与全局监听重复触发）。
+- **深色主题**: 画布、GraphViewer、DataViewer、Project Explorer 背景统一跟随主题（亮色中性灰 / 暗色深色）；修正 Sketcher 暗黑模式下结构式（碳原子等）因硬编码黑色 SVG 属性而不可见的问题。
+- **国际化**: 7 语种（en / zh-CN / zh-TW / ja / fr / es / da）补齐 Y Offset、Project Explorer 快捷键与文档名净化相关键。
+
+### 修复 (Fixed)
+- **工程文档名净化**: 单条 / 批量重命名在提交时剔除文件名非法字符（英文冒号 `/ \ : * ? " < > |` 及控制字符）；默认 Kinetics 示例图名由 `Graph 1: Kinetics Example` 修正为 `Graph 1 - Kinetics Example`。
+- **GraphViewer 坐标轴**: 用户填写的刻度间隔（xTickStep / yTickStep）落盘到 ECharts `axis.interval` 前加正数守卫——负数取绝对值、0 / 未填回退自动，杜绝非法 interval 导致刻度错乱。
+
+### 变更 (Changed)
+- **跨平台桌面构建**: 原生模块 `better-sqlite3` 不能交叉编译，Windows / Linux 安装包须在对应 OS 本机执行 `npm install`（重编原生 `.node`）+ `npm run dist:win` / `npm run dist:linux`（详见 DEPLOY.md §11）；`electron-builder.js` 对 host ≠ target 直接拒绝，除非自备目标平台预编译原生二进制并设置 `CTT_ALLOW_CROSSBUILD=1`。
+
+---
+
 ## [0.1.3] - 2026-08-18
 
 ### 新增 (Added)

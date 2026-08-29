@@ -44,6 +44,15 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src'),
+        // Real `font-face-observer` package, reachable under a NON-colliding
+        // specifier. The patch module imports it through THIS alias instead of
+        // the bare `'font-face-observer'` name, so the redirect plugin below
+        // (which only matches the bare name) never redirects the patch back to
+        // ITSELF. That self-redirect is what produced the Windows-only
+        // "Cannot access 'FontFaceObserver' before initialization" TDZ: on
+        // Windows the path-based exemption (`importer.includes('patches/...')`)
+        // could fail to match, throwing the patch's own import into a cycle.
+        'font-face-observer-ctt-real': resolve(__dirname, 'node_modules/font-face-observer'),
       },
     },
     define: {
@@ -88,21 +97,21 @@ export default defineConfig({
       {
         name: 'ctt-font-face-observer-patch',
         enforce: 'pre',
-        // Redirect every `font-face-observer` import/require (Sketcher's import
-        // AND ketcher-react's internal require) to our single patch module, so
-        // the prototype patch applies to the exact instance Ketcher uses. The
-        // patch module itself imports the real package by bare name; we let that
-        // resolve normally so Vite pre-bundles it as proper ESM with a `default`
-        // export. This avoids the dev-only
-        //   "does not provide an export named 'default'"
-        // crash that importing the raw CJS src/observer.js produced (build was
-        // fine because esbuild synthesized the default export there).
-        resolveId(source, importer) {
-          if (
-            source === 'font-face-observer' &&
-            importer &&
-            !importer.includes('patches/font-face-observer')
-          ) {
+        // Redirect every BARE `font-face-observer` import/require (Sketcher's
+        // import AND ketcher-react's internal require) to our single patch
+        // module, so the prototype patch applies to the exact instance Ketcher
+        // uses. The patch module itself imports the REAL package through the
+        // non-colliding alias `font-face-observer-ctt-real` (see resolve.alias
+        // above), so this plugin — which only matches the bare name — never
+        // redirects the patch back to itself. That self-redirect was the cause
+        // of a Windows-only
+        //   "Cannot access 'FontFaceObserver' before initialization" (TDZ):
+        // the previous version exempted the patch via
+        //   `!importer.includes('patches/font-face-observer')`,
+        // which could fail to match on Windows (backslash / casing in the
+        // importer path) and throw the patch's own import into a self-cycle.
+        resolveId(source) {
+          if (source === 'font-face-observer') {
             return resolve(__dirname, 'src/patches/font-face-observer.ts')
           }
           return null

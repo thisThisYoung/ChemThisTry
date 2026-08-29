@@ -27,6 +27,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@renderer': resolve(__dirname, 'src'),
+      // Mirror of the Electron renderer alias: the FontFaceObserver patch module
+      // (src/patches/font-face-observer.ts) imports the REAL package through this
+      // non-colliding specifier. The web build has no redirect plugin, so the
+      // patch is never actually loaded here — but defining the alias keeps the
+      // shared source graph resolvable if it ever is.
+      'font-face-observer-ctt-real': resolve(__dirname, 'node_modules/font-face-observer'),
     },
   },
   define: {

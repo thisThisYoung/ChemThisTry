@@ -1,8 +1,11 @@
 # ChemThisTry 智能体操作指南（Agent Operation Guide）
 
+> **文档适用版本：v0.1.4（2026-08）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
 > 面向 AI 智能体 / 自动化脚本的能力接口手册。
 > 本文档说明如何让一个语言模型（或外部程序）像用户一样操作 ChemThisTry：
 > 新建数据表、填充数据、绘图、曲线拟合、执行命令、读写 `.ctt` 工程文件。
+>
+> **文档适用版本：v0.1.4（2026-08）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
 
 ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运行时内」和「离线文件」两种场景：
 
@@ -38,6 +41,11 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 | 列出/执行命令 | `list_commands` / `run_command` | — | `commandRegistry` / `runCommand` |
 
 > 说明：MCP 通道操作的是**磁盘上的 `.ctt` 文件**（离线、无 UI），不涉及拟合、统计、侧车等需要运行时的能力；A 通道操作的是**当前正在运行的工程**，拥有全部运行时能力。
+
+> **v0.1.4 与智能体相关的变更要点：**
+> - **文档名净化**：在应用内新建 / 重命名文档时，名称中的文件系统非法字符会被剔除；图名中的 `:` 会被替换为 `-`（例如 `Graph 1: Kinetics Example` → `Graph 1 - Kinetics Example`）。通过工具传入的 `name` 可能被改写，读取时以实际存储名（`list_documents` / `read_project` 返回）为准。
+> - **深色主题统一适配**：应用现已统一适配深色主题（含 Sketcher 暗黑结构式不可见修复），智能体操作的 UI 在浅色 / 深色下均正常。
+> - **原生模块本机编译**：桌面端跨平台构建依赖的原生模块（如 `better-sqlite3`）不可交叉编译；在 Windows / Linux 上构建或从源码运行需在本机 `npm install` 重编（详见 DEPLOY.md §11）。MCP 通道在 `node:sqlite` 不可用而回退 `better-sqlite3` 时，同样受此约束。
 
 ---
 
@@ -364,7 +372,7 @@ interface UserPrefs {
 
 | 主题 | 文件 |
 |------|------|
-| AI 工具层（13 工具 + 分发器） | `src/lib/ai/tools.ts` |
+| AI 工具层（17 工具 + 分发器） | `src/lib/ai/tools.ts` |
 | Agent 客户端 + Agent 循环 | `src/lib/aiChat.ts` |
 | Agent 模式开关 UI / 首选项面板（分组导航 + 搜索 + 分区恢复默认） | `src/components/settings/PreferencesModal.tsx` |
 | 首选项标签页枚举（`PrefTab`） | `src/store/preferencesStore.ts` |
