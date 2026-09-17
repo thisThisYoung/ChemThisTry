@@ -1,11 +1,11 @@
 # ChemThisTry 智能体操作指南（Agent Operation Guide）
 
-> **文档适用版本：v0.1.4（2026-08）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
+> **文档适用版本：v0.1.5（2026-09）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
 > 面向 AI 智能体 / 自动化脚本的能力接口手册。
 > 本文档说明如何让一个语言模型（或外部程序）像用户一样操作 ChemThisTry：
 > 新建数据表、填充数据、绘图、曲线拟合、执行命令、读写 `.ctt` 工程文件。
 >
-> **文档适用版本：v0.1.4（2026-08）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
+> **文档适用版本：v0.1.5（2026-09）。** 文中能力随版本演进，旧版本可能缺少部分工具或字段。
 
 ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运行时内」和「离线文件」两种场景：
 
@@ -37,8 +37,11 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 | 新建 3D 结构 (Molecule) | — | `add_molecule` | `setMolecule`（3Dmol；cif/xyz/mol/pdb/sdf/mlcl） |
 | 新建流程图 (FlowViewer) | — | `add_flow` | React Flow 模型（`doc.flow` JSON） |
 | 新建画布 (Canvas) | `add_canvas` | `add_canvas` | Fabric JSON（`doc.content` 字符串） |
-| 导出 CSV | （见 `run_command`） | `export_sheet_csv` | `useDatasetStore.exportCSV` |
+| 导出文档（CSV/SVG/PNG/PDF） | `export_document` | `export_sheet_csv` | sheet→`exportCSV`；graph/canvas/sketch→`renderGraphToSVGString` / `molToSvg` / fabric SVG；桌面走 `export:saveFile` IPC，web 走 Blob 下载 |
 | 列出/执行命令 | `list_commands` / `run_command` | — | `commandRegistry` / `runCommand` |
+| 重命名文档 | `rename_document` | — | `renameDoc`（sheet 还会 `renameDataset` 同步数据集名） |
+| 删除文档 | `delete_document` | — | `removeDoc`（级联删 dataset + 绑定 graph） |
+| 写入单元格 | `update_cells` | — | `fillCells`（单事务、自动补行） |
 
 > 说明：MCP 通道操作的是**磁盘上的 `.ctt` 文件**（离线、无 UI），不涉及拟合、统计、侧车等需要运行时的能力；A 通道操作的是**当前正在运行的工程**，拥有全部运行时能力。
 
@@ -64,7 +67,7 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 
 ### 2.2 运行机制
 
-- 代码位置：`src/lib/aiChat.ts` 的 `runAgentLoop()`，工具层在 `src/lib/ai/tools.ts`。
+- 代码位置：`src/lib/agentChat.ts` 的 `runAgentLoop()`，工具层在 `src/lib/ai/tools.ts`。
 - 开启 Agent 模式后，`send()` 走非流式的 tool-calling 循环（最多 `MAX_AGENT_ITERATIONS = 8` 轮）：
   1. 以 `AGENT_SYSTEM_PROMPT` + 历史 + 用户输入构造请求，携带 `tools: TOOL_SCHEMAS`、`tool_choice: 'auto'`；
   2. 若模型返回 `tool_calls`，逐个用 `runTool(name, args)` 执行，把结果作为 `role:'tool'` 消息回灌；
@@ -72,9 +75,10 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
   4. 模型返回不含工具调用的普通文本即为最终答复。
 - 工具直接操作 zustand store / 命令注册表 / 侧车 IPC，**不新增任何主进程接口**——智能体走的正是用户点按钮时走的同一套状态通路。
 - 数据表、列均**按人类可读的名称寻址**（大小写不敏感），也可用内部 id。
+- **把当前页面作为上下文（Preferences > AI，默认关闭）**：开关 `includePageContext` 开启后，`send()` 在每轮用户消息里自动调用 `collectPageContext()`（`src/lib/pageContext.ts`）——经活动 pane 上的 `data-active-pane-content` 标记定位当前文档，用 `captureViewerThumb`（html2canvas，复用文档切换器缩略图基础设施）截当前视图图，并附一段该文档的数据摘要（表：列名/单位/标签 + 前 30 行；图：标题/图型/轴标题/系列 + 底层数据集摘要；草图/分子/画布/流程图：结构文本或对象数）。截图作为 `image_url` 片段、数据摘要作为文本，合并进该轮 user 消息（与用户手动 ＋ 选的文件图片叠加）。无活动文档时 `collectPageContext` 返回 null、不附加，零额外开销。
 - 用户可在 Agent 中**附加图片**（截图、谱图、结构式等）；图片在浏览器端降采样（最长边 ≤1568px、JPEG 0.8）后以 `image_url` 多模态片段随消息发出，**流式**与 **Agent** 两条路径都支持。用户附带图片的 `user` 消息在 `ChatMessage.images` 上携带 data URL，构造请求时由 `toApiContent()` 转成 OpenAI 多模态 `content` 数组。
 
-### 2.3 工具清单（17 个）
+### 2.3 工具清单（23 个）
 
 以下为暴露给模型的 `TOOL_SCHEMAS`。参数中标注 `*` 为必填。
 
@@ -112,6 +116,26 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 - `xColumn*`：X 轴列
 - `yColumns*`：一个或多个 Y 轴列（`string[]`）
 - `chartType`：图型（默认 `line`，取值见 §5.1）
+- `title`：图标题文本（可选）
+- `showTitle`：是否显示图标题（默认 title 非空时为真）
+- `xLabel` / `yLabel` / `zLabel`：X / 左 Y / Z 轴标题（可选）
+- `yAxisSide`：双 Y 轴分配，对象 `{ Y列名或id: "left" | "right" }`；映射到 `"right"` 的系列画在右轴
+- `rightYLabel`：右轴标题（至少要有一个 Y 列分配给 `"right"` 才有意义）
+- `errorCols`：误差棒列，对象 `{ Y列名或id: 误差列名或id }`；误差列存该 Y 系列的 ± 不确定度
+返回：`graphId / graphName`。
+> `yColumns` / `yAxisSide` 的键 / `errorCols` 的键与值**均按列名或列 id 寻址**（大小写不敏感），工具内部会解析成列 id 再写入 `addGraphFromSheet`，无需调用方先查 id（与底层 store 要求 id 的约束不同，见 §5.3）。
+
+#### `get_graph_config`
+读取某图（按 id 或名称）的完整绘图配置：标题、轴标题、图例/网格开关、对数轴、轴范围、双轴分配、误差棒映射及全部系列样式。返回**生效的** `PlotConfig`（图尚未在查看器打开时会从数据绑定基线化）。
+- `graph*`：图 id 或名称
+返回：`graphId / graphName / plotConfig`。
+
+#### `set_graph_options`
+修改某图（按 id 或名称）的绘图选项；可只改部分字段，未给出的字段保留原值。支持标题、图例/网格、对数轴、轴范围、双轴分配（`yAxisSide`）、误差棒映射（`errorCols`）、右轴标题（`rightYLabel`）；系列样式用与 `get_graph_config` 相同的键。
+- `graph*`：图 id 或名称
+- `options*`：绘图选项对象，字段：`title / showTitle / xLabel / yLabel / zLabel / legend / grid / gridX / gridY / xLog / yLog / zLog / xMin / xMax / yMin / yMax / yAxisSide / errorCols / yAxisR / rightYLabel`
+  - `yAxisSide` / `errorCols` 的键与值按列名或 id 寻址
+  - `yAxisR`：`{ label, log, min, max }` 形式的右轴设置
 返回：`graphId / graphName`。
 
 #### `fit_curve`
@@ -168,6 +192,37 @@ ChemThisTry 提供**三条**互补的智能体接入通道，覆盖「应用运�
 按 id 或名称读取某分子文档，返回其 `text / format / view / bonds`。
 - `molecule*`
 返回：`moleculeId / moleculeName / text / format / view / bonds`。
+
+#### `rename_document`
+重命名任意类型文档（sheet / graph / sketch / molecule / canvas）。
+- `document*`：文档 id 或名称
+- `newName*`：新显示名（非法字符会被剔除；sheet 会同步重命名其 1:1 数据集，使绑定图的标题保持一致）
+返回：`documentId / type / oldName / newName`。
+
+#### `delete_document`
+删除文档。删除 sheet 会级联删除其数据集与所有绑定该表的图（与应用内正常删除行为一致）。该操作不可逆，建议在删除前向用户确认。
+- `document*`：文档 id 或名称
+返回：`deletedId / name / type`。
+
+#### `update_cells`
+向已有数据表的某一列写入一列数值，从可选的 0 基行号（`startRow`，默认 0）开始；行数不足自动补齐；整次写入为**单个撤销步**。
+- `sheet*`：表名或 id
+- `column*`：列名或 id
+- `values*`：`(number|string)[]`，自上而下写入
+- `startRow`：起始行（默认 0）
+返回：`sheetId / columnName / startRow / rowsWritten`。
+
+#### `export_document`
+把一个已存在文档导出成文件并保存（桌面走原生保存对话框、web 走下载）。模型可拿到桌面保存路径，或直接拿到内联 data URL / CSV 文本自行使用。
+- `document*`：文档 id 或名称（任意类型）
+- `format`：输出格式，默认随文档类型而定 —— sheet→`csv`、graph/canvas/sketch→`png`、flow→`svg`。取值 `csv | svg | png | pdf`
+分派规则（按 `resolveAnyDoc` 解析出的 `doc.type`）：
+- **sheet**：强制 `csv`，调 `useDatasetStore.exportCSV` 生成 CSV（带引号转义），返回 CSV 文本 + `rowCount / columnCount` + 保存路径。
+- **graph**：用 `materializePlotConfig(doc)` 基线化配置并补 `datasetId`，再 `renderGraphToSVGString(cfg, cfg.plotWidth, cfg.plotHeight)` 渲染 2D 图 SVG。⚠️ headless 渲染**不含**实时 ShapeOverlay 标注层。
+- **sketch**：`molToSvg(doc.structure, 600)` 经 `chem:molToSvg` IPC 出 SVG（需桌面侧车；web/移动缺失时回退提示）。
+- **canvas**：`renderCanvasToSvg(doc.content)` 用 fabric v6 `StaticCanvas#loadFromJSON` + `toSVG()` headless 渲染 SVG。
+- **molecule / 其它**：3D 分子无法 headless 光栅化，显式报错并引导用户在 Molecule 查看器内用应用内导出。
+SVG 产出后按 `format` 转码：`svg`→UTF-8 base64；`png`→`svgToPngDataUrl`；`pdf`→先试 `chem:convertVector` 侧车，失败回退 `svgToPdfBytesClient`。最后统一经 `export:saveFile` IPC（桌面返回路径）/ web Blob 下载落地，返回 `{ ok, documentId, type, format, savedPath, dataUrl }`。
 
 ### 2.4 对话示例
 
@@ -320,9 +375,10 @@ bubble, bar-cat
 
 ### 5.3 zustand Store 原语
 
-- `useProjectStore`：`addDoc(type, name?)`、`addGraphFromSheet(datasetId, xCol, yCols[], chartType, yAxisSide?, errorCols?, dimension?, zCol?, seriesDatasets?)`、`docsByType`、`removeDoc`、`renameDoc`、`setGraphPlot`、`setMolecule`、`setCanvasContent`、`setStructure`。
+- `useProjectStore`：`addDoc(type, name?)`、`addGraphFromSheet(datasetId, xCol, yCols[], chartType, yAxisSide?, errorCols?, dimension?, zCol?, seriesDatasets?)`、`docsByType`、`removeDoc`、`renameDoc`、`setGraphPlot`、`setMolecule`、`setCanvasContent`、`setStructure`，以及导出的 `materializePlotConfig(doc)`（把图基线化成生效 `PlotConfig`，供合并部分选项用）。
   - ⚠️ **`addGraphFromSheet` 的 `xCol` / `yCols` / `errorCols` 的值必须是列 `id`，不是列 `name`**：GraphViewer 渲染时按 `dataset.columns.find(c => c.id === yId)` 解析数据，传名称会因 id 不匹配而得到空白图。若只有列名，先用 `dataset.columns.find(c => c.name === name)?.id` 解析出 id 再传入（`src/lib/startProjects.ts` 的动力学示例即踩过此坑并已修复）。`yAxisSide` / `errorCols` 的键也要用列 id（如 `{ [signalId]: 'left' }`、`{ [signalId]: errorId }`）。
-- `useDatasetStore`：`createDataset`、`getDataset`、`addColumn`、`addRows`、`setCell`、`addFormulaColumn`、`setColumnMeta`、`importText`、`exportCSV`、`rowCount`、`seedKinetics`。
+  - 通道 A 的 `create_graph` / `set_graph_options` 工具**已在内部把列名解析成 id**（含 `yAxisSide` / `errorCols` 的键与值），智能体直接传列名即可，无需先查 id；`get_graph_config` / `set_graph_options` 通过 `materializePlotConfig` 读写生效配置，未打开的图会从绑定基线化。
+- `useDatasetStore`：`createDataset`、`getDataset`、`addColumn`、`addRows`、`setCell`、`fillCells`、`renameDataset`、`addFormulaColumn`、`setColumnMeta`、`importText`、`exportCSV`、`rowCount`、`seedKinetics`。
 - `useWorkspaceStore`：`openDoc`、`closeDoc`、`splitPane`、`closePane`、`moveTab`。
 
 ### 5.4 `.ctt` 工程文件结构
@@ -372,8 +428,8 @@ interface UserPrefs {
 
 | 主题 | 文件 |
 |------|------|
-| AI 工具层（17 工具 + 分发器） | `src/lib/ai/tools.ts` |
-| Agent 客户端 + Agent 循环 | `src/lib/aiChat.ts` |
+| AI 工具层（23 工具 + 分发器） | `src/lib/ai/tools.ts` |
+| Agent 客户端 + Agent 循环 | `src/lib/agentChat.ts` |
 | Agent 模式开关 UI / 首选项面板（分组导航 + 搜索 + 分区恢复默认） | `src/components/settings/PreferencesModal.tsx` |
 | 首选项标签页枚举（`PrefTab`） | `src/store/preferencesStore.ts` |
 | 用户偏好读写（`UserPrefs` / `resetUserPrefs`） | `src/lib/userPrefs.ts` |

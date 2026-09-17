@@ -46,6 +46,17 @@ ChemThisTry 由五个相互联动的模块组成，共享一个无限画布工�
 - 首选项 Preferences: 左侧分组导航 + 内容区的主从式设置面板，涵盖外观 / 主题、图表默认、导出默认、快捷键一览、AI 助手、插件；支持顶部搜索定位与分区 / 全局「恢复默认」。A master-detail settings panel (grouped left-side navigation + content area) covering appearance / theme, graph defaults, export defaults, a keyboard-shortcut reference, the AI assistant, and plugins — with a search box and per-section / global "Reset to defaults". On mobile (phone web), the AI / Plugins / Shortcuts tabs are hidden to reduce clutter, leaving only General / Graph / Export / About.
 - 帮助中心 Help center: 内置的分节文档（快速上手、各模块指南、疑难排查）与「关于」页（版本号、官网 / 源码链接、许可证、技术栈）。Built-in sectioned documentation (getting started, per-module guides, troubleshooting) plus an About page (version, website / source links, license, tech stack).
 
+### ✨ v0.1.5 新增 What's new in v0.1.5
+
+- **应用内 Agent:** 新增「把当前页面作为上下文」开关（默认关闭）——开启后每次对话自动把当前活动文档的截图与数据摘要附为上下文，与手动图片叠加；无活动文档时不发送。New "Include current page as context" toggle for the in-app Agent (off by default) — auto-attaches a screenshot and data summary of the active document to every message, alongside manually attached images; nothing is sent when no document is open.
+- **数据作图 GraphViewer:** 工具栏新增基线 / 差分 / 放大镜 / 切线 / 文本标注工具，曲线拟合移入工具栏；支持倾斜坐标轴与图例单 / 单列排列。The toolbar gains Baseline / Difference / Magnifier / Tangent / Text tools, and curve fitting moves into the toolbar; tilted axes and single-row/column legends are supported.
+- **工程导航 Project Explorer:** 空白处拖动可框选多个文档、多选整体拖入文件夹；新建 / 导入后光标自动跟随新文档；选中即按 F2 重命名。Marquee-select multiple documents and drag them into folders; the tree follows the newly created/imported document; F2 renames in place.
+- **数据表 DataViewer:** 单元格公式 / 函数、查找替换、文本竖直居中、F2 进入编辑。Cell formulas/functions, find & replace, vertical text centering, and F2 to edit.
+- **3D 分子 Moleculer:** 加氢原子 / 删除原子、角度 / 二面角图标重做；晶胞粗细随工程持久化；「导出 .mlcl」与「导出结构」合并为统一入口。Redesigned add-H / delete-atom and angle / dihedral icons; cell thickness persists with the project; ".mlcl" and structure export merged into one entry.
+- **矢量画布 Canvas:** 文本对齐选项、大图导出优化。Text alignment options and more stable large-image export.
+- **导出 PowerPoint:** 当前视图可一键插入已打开的 PowerPoint 演示文稿（菜单统一为「→ PPT」）；未运行 PowerPoint 时回退剪贴板。One-click insert of the current view into an open PowerPoint ("→ PPT"), falling back to the clipboard when PowerPoint is not running.
+- **ActionTracker 插件:** 浮层实时显示鼠标点击与键盘按键，适合录屏 / 演示。New ActionTracker plugin overlays live mouse-click and keypress activity for screencasts / demos.
+
 ### ✨ v0.1.4 新增 What's new in v0.1.4
 
 - **数据作图 GraphViewer:** 系列外观新增「纵坐标偏移」(Y Offset) 属性，可控制每个系列相对自身纵轴的上下偏移（不改坐标轴范围、不影响其它系列）。A new **Y Offset** property in series styling lets each series shift up/down along its own Y axis without altering axis ranges or other series.
@@ -69,15 +80,15 @@ macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-bui
 
 👉 最新版 Latest: https://github.com/thisThisYoung/ChemThisTry/releases/latest
 
-👉 v0.1.4: https://github.com/thisThisYoung/ChemThisTry/releases/tag/v0.1.4
+👉 v0.1.5: https://github.com/thisThisYoung/ChemThisTry/releases/tag/v0.1.5
 
 | 平台 Platform | 文件 File |
 |---------------|-----------|
-| macOS（Apple Silicon） | `ChemThisTry-0.1.4-arm64.dmg` |
-| macOS（Intel） | `ChemThisTry-0.1.4.dmg` |
-| Windows | `ChemThisTry Setup 0.1.4.exe` |
-| Linux（便携版 portable） | `ChemThisTry-0.1.4.AppImage` |
-| Linux（Debian/Ubuntu） | `chemthistry_0.1.4_amd64.deb` |
+| macOS（Apple Silicon） | `ChemThisTry-0.1.5-arm64.dmg` |
+| macOS（Intel） | `ChemThisTry-0.1.5.dmg` |
+| Windows | `ChemThisTry Setup 0.1.5.exe` |
+| Linux（便携版 portable） | `ChemThisTry-0.1.5.AppImage` |
+| Linux（Debian/Ubuntu） | `chemthistry_0.1.5_amd64.deb` |
 
 下载对应平台的文件按常规安装即可，无需账号或构建步骤。Apple Silicon（M 系列）Mac 用 `-arm64` 版本；Intel Mac 用无芯片后缀的版本。Download the file for your platform and install as usual — no account or build step required. On Apple Silicon Macs use the `-arm64` build; Intel Macs use the file with no arch suffix.
 
@@ -98,8 +109,8 @@ macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-bui
 2. 点仍要运行。Click Run anyway.
 
 ### Linux
-- **AppImage:** 赋予执行权限后运行。chmod +x then run: `chmod +x ChemThisTry-0.1.4.AppImage`
-- **.deb:** 如缺依赖用 `sudo apt-get install -f` 补齐。Install with `sudo dpkg -i chemthistry_0.1.4_amd64.deb` (resolve deps via `sudo apt-get install -f` if needed).
+- **AppImage:** 赋予执行权限后运行。chmod +x then run: `chmod +x ChemThisTry-0.1.5.AppImage`
+- **.deb:** 如缺依赖用 `sudo apt-get install -f` 补齐。Install with `sudo dpkg -i chemthistry_0.1.5_amd64.deb` (resolve deps via `sudo apt-get install -f` if needed).
 
 ## Python 侧车 Python sidecar
 
@@ -133,9 +144,9 @@ macOS / Windows / Linux 的预编译安装包发布在 Releases 页面。Pre-bui
 ## 项目状态 Status
 
 - 本仓库为发布 / 门面仓库，分发编译产物与文档；完整源码暂未公开，就绪后将以 Apache-2.0 开源。This repository is the release / facade repo — it distributes the built application and documentation; the full source is not yet public and will be opened under Apache-2.0 when ready.
-- 当前版本 v0.1.4（2026-08）。Current release: v0.1.4 (Aug 2026).
+- 当前版本 v0.1.5（2026-09）。Current release: v0.1.5 (Sep 2026).
 - 当前构建未签名，签名 / 公证在计划中。Builds are currently unsigned; signing / notarization is planned.
-- 桌面版也可从源码构建（Windows / Linux），原生模块 better-sqlite3 需在本机编译，步骤见 [DEPLOY.md §11](DEPLOY.md)。The desktop app can also be built from source on Windows/Linux — see DEPLOY.md §11.
+- 桌面版也可从源码构建（Windows / Linux），原生模块 better-sqlite3 需在本机编译。The desktop app can also be built from source on Windows/Linux — the native module better-sqlite3 must be compiled on the target machine.
 
 ## 反馈 Feedback
 

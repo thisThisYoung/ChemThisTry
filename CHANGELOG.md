@@ -5,6 +5,37 @@
 
 ---
 
+## [0.1.5] - 2026-09-01
+
+### 新增 (Added)
+- **应用内 Agent「把当前页面作为上下文」开关（默认关闭）**：设置 → AI 新增 `Include current page as context` 选项。开启后，每次与 Agent 对话自动把「当前活动文档（pane）的截图 + 数据摘要」作为上下文附加发送——复用文档切换器缩略图基础设施（`captureViewerThumb` / html2canvas）截图，按文档类型生成数据摘要（表：列名/单位/标签 + 前 30 行；图：标题/图型/轴标题/系列 + 底层数据集摘要；草图/分子：结构文本；画布/流程图：对象/节点数）。与用户手动 ＋ 选取的图片叠加；无活动文档时不发送。详见 `docs/AGENT_GUIDE.md` §2.2。
+- **应用内 Help 文档补齐 v0.1.3–0.1.5 功能变动**：Sketcher 新增「渲染与文字」小节（渲染设置浮动面板、字号/字体、单原子 Atom Label、LaTeX 文字、结构操作全链路、键型/取代基/工具栏快捷键）；Canvas 新增「高级编辑」小节（真裁剪、LaTeX 文字、表格工具、绕九宫格参考点旋转、顶点编辑、隔离模式）；Moleculer 新增「多帧轨迹」小节（Gaussian `.out/.log/.gjf`、VASP `XDATCAR/POSCAR/CONTCAR`、多分子 SDF 多帧载入 + 帧滑块/播放/0.2×–20× + 持久化）；键盘快捷键表新增 `Shift+Tab`；Project Explorer 行为说明（光标跟随、文件名净化）；Preferences 补「把当前页面作为上下文」说明。
+
+- **导出到 PowerPoint（插入已打开的演示文稿）**：当前视图可一键导出为 PNG 并插入到已打开的 PowerPoint 演示文稿（macOS 经 AppleScript、Windows 经 Office COM，未运行 PowerPoint 时回退剪贴板），菜单文字统一为「→ PPT」。
+- **Project Explorer 框选与右键新建**：文档树空白处拖动可框选（marquee）多个文档；多选文档可整体拖入文件夹移动；右键文档树空白处新增「新建文档」入口。
+- **DataViewer 公式、查找替换与对齐**：单元格支持公式/函数计算；新增查找与替换功能；数据单元格文本支持竖直居中对齐；选中单元格按 F2 进入编辑模式。
+- **GraphViewer 工具栏工具扩充**：曲线拟合从属性面板移入工具栏工具；新增基线（Baseline）/ 差分（Difference）/ 放大镜（Magnifier）/ 切线（Tangent）/ 文本标注 工具；支持横纵坐标角度（倾斜轴）设置；图例支持单行或单列排列。
+- **Sketcher Esc 清除工具**：按 Esc 清除当前选中的绘图工具并返回选择态。
+- **Moleculer 图标与导出优化**：加氢原子 / 删除原子、角度 / 二面角图标重做；晶胞粗细随工程持久化；「导出 .mlcl」与「导出结构」合并为统一导出入口。
+- **Canvas 文本对齐与大图导出**：文本工具新增对齐选项；明确导出 PNG 尺寸上限并优化大图导出稳定性。
+- **ActionTracker 插件**：新增浮层实时显示鼠标点击与键盘按键操作（类 Screencast Keys 风格）。
+
+### 修复 (Fixed)
+- **Project Explorer 光标跟随**：新建/导入文档后，Project Explorer 的选中光标自动移动到新文档（高亮选中 + 键盘光标对准 + 必要时展开父文件夹并滚动到可见）。覆盖全部用户主动创建文档的入口——PE 内「新建」菜单（Shift+A）、上方快捷新建栏、File → New、命令面板、欢迎页、File → Import（分子文件）、Sketcher 导出 3D 结构为新分子文档、**拖放文件到窗口**（分子 / 数据文件，与 File → Import 同构）、**控制台运行 Python 生成图表**（新建 sheet + graph 文档）、**画布导出为新 canvas 文档**。实现为 `projectStore` 的跨组件信号 `pendingSelectDocId`（创建入口写入、ProjectExplorer 经 `useEffect` 消费并清零），单一机制统一所有入口。
+- **Project Explorer 选中即按 F2 重命名**：选中单个文档或文件夹且焦点位于 Project Explorer 内时按 F2 即可进入行内重命名（此前 F2 仅在右键菜单打开时生效，且要求光标位于 PE 区域）；焦点在画布等其它面板时交给该面板自身的 F2（如画布 Outliner 重命名），互不冲突。`Ctrl/Cmd+F2` 仍保留为批量重命名。
+- **System 国际化跟随**：水平菜单栏与撤销历史栈（stack）现已跟随语言切换，不再残留英文文案。
+- **Sketcher 顶栏灰色按钮**：修复部分顶部工具栏按钮显示为灰色但实际可点击的视觉/交互不一致问题。
+- **DataViewer 编辑体验修复**：修复表头单元格吞掉首个按键输入；Backspace 不再无确认删除选中单元格整行（改为仅清除内容并弹确认）；数据单元格不再因单次点击误入编辑模式（调整为需双击 / Enter 进入编辑）。
+- **GraphViewer 主题持久化**：主题设置随工程保存，重新打开自动恢复。
+- **Canvas 图片说明导入**：从图片导入到 Canvas 时不再把图片说明（caption）作为文本显示出来。
+- **Canvas 大图更新失效**：修复绘制约 12 张图后画布停止更新、「立即更新」按钮无效的问题。
+
+### 变更 (Changed)
+- **关系图谱下方提示栏移除**：Project Explorer 底部的 `explorer-selhint` 页脚（含空闲态多选提示与选中态操作指引）已移除，关系图谱下方不再显示任何提示文字。
+- **Moleculer 导出入口合并**：「导出 .mlcl」与「导出结构」合并为统一导出入口，减少重复菜单项。
+
+---
+
 ## [0.1.4] - 2026-08-28
 
 ### 新增 (Added)
