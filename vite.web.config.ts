@@ -74,12 +74,29 @@ export default defineConfig({
       transformMixedEsModules: true,
     },
     rollupOptions: {
-      // Emit a single self-contained IIFE so it executes as a classic script.
-      // inlineDynamicImports folds the lazy ketcher / 3dmol chunks into one
-      // file, removing the runtime `import()` that also fails under file://.
+      // Emit ES modules with REAL code splitting. The app is already written
+      // for this: every heavy viewer (Ketcher / 3Dmol / ECharts / …) is reached
+      // through `lazy()` + dynamic `import()` in src/components/workspace/
+      // viewerChunks.ts, so Rollup produces one small entry chunk plus separate
+      // on-demand viewer chunks. The cold start then only parses/compiles the
+      // core (a few MB) instead of the whole ~40 MB single IIFE — this is what
+      // makes the HarmonyOS/ArkWeb cold start fast.
+      //
+      // Previously this was `format: 'iife'` + `inlineDynamicImports: true`,
+      // folding everything into ONE classic <script> (the old ~41 MB monolith).
+      // Dropping `inlineDynamicImports` gives real code splitting, but ArkWeb
+      // STILL cannot fetch ES-module sub-resources from $rawfile (opaque
+      // null-origin + `crossorigin` => CORS block => blank WebView), so an
+      // onInterceptRequest shim in Index.ets proved unreliable for MODULE
+      // sub-resources. The pragmatic fix (harmonyos/sync-web.sh ->
+      // scripts/inline-entry-for-arkweb.mjs) inlines ONLY the entry
+      // index.js + index.css into index.html, so the cold start makes ZERO
+      // external module requests. The heavy viewer chunks stay as on-demand
+      // dynamic imports (served lazily; they still need a fetch/intercept path
+      // under ArkWeb and are validated separately). Do NOT re-enable
+      // inlineDynamicImports — that would also inline the 24 MB Ketcher chunk.
       output: {
-        format: 'iife',
-        inlineDynamicImports: true,
+        format: 'es',
         entryFileNames: 'assets/index.js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name][extname]',
@@ -105,60 +122,13 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    // ArkWeb (HarmonyOS Web component) loads this bundle from $rawfile via a
-    // file://-like context. `<script type="module">` is blocked there by the
-    // opaque-origin CORS rule, and `crossorigin` is also refused. Strip BOTH so
-    // the emitted script runs as a classic (non-module) script. Harmless for
-    // normal browsers.
-    {
-      name: 'strip-module-crossorigin-for-arkweb',
-      // Only strip in BUILD output. The dev server serves native ESM and must
-      // keep `type="module"` — ctx.server is defined there, so we skip.
-      transformIndexHtml(html, ctx) {
-        if (ctx && ctx.server) return html
-        return html
-          .replace(/\s+type="module"/g, '')
-          .replace(/\s+crossorigin(="")?/g, '')
-      },
-    },
-    // Inline the JS (and CSS) bundle directly into index.html for the BUILD
-    // output. Under ArkWeb $rawfile (file://, opaque origin) the Web component
-    // serves rawfile sub-resources with a MIME/permission quirk that silently
-    // blocks external <script src> (no error event, blank page). An INLINE
-    // <script> always executes — no fetch, no MIME, no CORS. This makes the
-    // HarmonyOS/rawfile build self-contained. (Dev server keeps normal ESM.)
-    {
-      name: 'inline-bundle-for-arkweb',
-      apply: 'build',
-      enforce: 'post',
-      generateBundle(_options, bundle) {
-        const htmlFile = bundle['index.html']
-        if (!htmlFile) return
-        let htmlSrc =
-          typeof htmlFile.source === 'string' ? htmlFile.source : String(htmlFile.source)
-        const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        for (const [name, asset] of Object.entries(bundle)) {
-          if (asset.type === 'chunk') {
-            const re = new RegExp(
-              '<script[^>]*src="([^"]*' + esc(name) + ')"[^>]*></script>',
-            )
-            if (re.test(htmlSrc)) {
-              const code = (asset as { code: string }).code.replace(/<\/script>/gi, '<\\/script>')
-              htmlSrc = htmlSrc.replace(re, () => '<script>' + code + '</script>')
-              delete bundle[name]
-            }
-          } else if (asset.type === 'asset' && name.endsWith('.css')) {
-            const re = new RegExp('<link[^>]*href="([^"]*' + esc(name) + ')"[^>]*>')
-            if (re.test(htmlSrc)) {
-              const cssSrc = (asset as { source: string | Uint8Array }).source
-              const css = typeof cssSrc === 'string' ? cssSrc : Buffer.from(cssSrc).toString('utf8')
-              htmlSrc = htmlSrc.replace(re, () => '<style>' + css + '</style>')
-              delete bundle[name]
-            }
-          }
-        }
-        htmlFile.source = htmlSrc
-      },
-    },
+    // NOTE: the old `strip-module-crossorigin-for-arkweb` and
+    // `inline-bundle-for-arkweb` plugins were removed. They forced a single
+    // inlined classic <script> to work around ArkWeb blocking $rawfile sub-
+    // resource loads. With real code splitting (format: 'es', no
+    // inlineDynamicImports) the build now emits separate chunk files; those are
+    // served from rawfile by `onLoadIntercept` in harmonyos/.../Index.ets with
+    // the correct MIME + CORS, so neither plugin is needed. Harmless for normal
+    // browsers (which serve the chunks as standard ES modules).
   ],
 })
